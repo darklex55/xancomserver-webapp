@@ -2,19 +2,40 @@
 {% block title %}Home{% endblock %}
 
 {% block sockets %}
+
+{% if current_user.is_privilleged %}
+
+<script>
+    socket.on('recieve_announcements', function(data){
+            console.log(data);
+            var html = '';
+            
+            for (var i=0;i<data[5];i++){
+            html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://crafatar.com/avatars/'+data[1][i]+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[0][i] +'</p></div><p style="font-size: small; align-self: center; margin-bottom: 0; padding-bottom: 0">'+ data[2][i] +'</p><a style="color: red" href="/delete_announcement?announcement_id=' + data[4][i] + '"><p style="font-size: 12px; color=red; margin:0; padding:0; flex:.5">Delete</p></a></div><p style="margin-left:10px">'+ linkify(data[3][i]) +'</p></div><hr>';
+            }
+            document.getElementById('announcements_board_div').innerHTML = html;
+        });
+</script>
+
+{% else %}
+
+<script>
+    socket.on('recieve_announcements', function(data){
+        console.log(data);
+        var html = '';
+        
+        for (var i=0;i<data[5];i++){
+        html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://crafatar.com/avatars/'+data[1][i]+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[0][i] +'</p></div><p style="font-size: small; align-self: center;">'+ data[2][i] +'</p></div><p style="margin-left:10px">'+ linkify(data[3][i]) +'</p></div><hr>';
+        }
+        document.getElementById('announcements_board_div').innerHTML = html;
+    });
+</script>
+
+{% endif %}
 <script>
     socket.on('connect', function() {
         socket.emit('ask port status', {data: 'gimme port pluiz'});
         socket.emit('get_announcements', {data: 'gimme announcements pluizz'});
-    });
-
-    socket.on('recieve_announcements', function(data){
-        console.log(data);
-        var html = '';
-        for (var i=0;i<data[4];i++){
-        html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://crafatar.com/avatars/'+data[1][i]+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[0][i] +'</p></div><p style="font-size: small; align-self: center;">'+ data[2][i] +'</p></div><p style="margin-left:10px">'+ linkify(data[3][i]) +'</p></div><hr>';
-        }
-        document.getElementById('announcements_board_div').innerHTML = html;
     });
 
     socket.on('get port status', function(data) {
@@ -35,6 +56,11 @@
         }
         document.getElementById('nav_date').innerHTML = 'Last update: ' + data[5]
     });
+
+    function refreshPorts(){
+        socket.emit('ask port status', {data: 'gimme port pluiz'});
+    }
+
 </script>
 {% endblock %}
 
@@ -95,7 +121,7 @@
     <div class="body-main-list">
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
             <h4 style="padding-top: 10px">Available IPs</h4>
-            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refresh()"><i class="fa fa-refresh" style="align-self: center"></i></button>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()"><i class="fa fa-refresh" style="align-self: center"></i></button>
         </div>
         <table class="table"> 
             <thread style="padding-bottom: 10px">

@@ -1,7 +1,7 @@
 from flask_socketio import emit
 import socketio
-from website.python_utils import getPortStatus, getAnnouncemnts
-from website.models import db, Announcements
+from .python_utils import getPortStatus, getAnnouncemnts
+from .models import db, Announcements
 from flask_login import current_user
 from datetime import datetime
 

@@ -1,7 +1,7 @@
 from flask import Blueprint, flash, render_template, request, session, redirect, url_for, make_response
-from website.python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getMinecraftServers, toggleGameServerSchedule
+from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getMinecraftServers, toggleGameServerSchedule
 from flask_login import login_required, current_user, logout_user
-from .models import User
+from .models import User, Announcements
 from . import SERVER_IP, db
 
 import requests
@@ -230,7 +230,22 @@ def delete_user(user_id):
     if (request.method=='POST' and current_user.is_privilleged):
         print(user_id)
     return redirect(url_for('views.settings'))
-    
+
+@views.route('/delete_announcement')
+@login_required
+def delete_announcement():
+    if current_user.is_privilleged:
+        if 'announcement_id' in request.args:
+            announcement = Announcements.query.filter_by(id=request.args['announcement_id']).first()
+            if announcement:
+                db.session.delete(announcement)
+                db.session.commit()
+        else:
+            flash('Invalid Action', type='error')
+    else:
+        flash('Invalid Action', type='error')
+
+    return redirect(url_for('views.home'))
 
 @views.route('/verification')
 def account_verification():
