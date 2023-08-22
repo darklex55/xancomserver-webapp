@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block sockets %}
+<script>
+    socket.on('connect', function() {
+        socket.emit('ask port status', {data: 'gimme port pluiz'});
+        socket.emit('get_announcements', {data: 'gimme announcements pluizz'});
+    });
+
+    socket.on('recieve_announcements', function(data){
+        console.log(data);
+        var html = '';
+        for (var i=0;i<data[4];i++){
+        html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://crafatar.com/avatars/'+data[1][i]+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[0][i] +'</p></div><p style="font-size: small; align-self: center;">'+ data[2][i] +'</p></div><p style="margin-left:10px">'+ linkify(data[3][i]) +'</p></div><hr>';
+        }
+        document.getElementById('announcements_board_div').innerHTML = html;
+    });
+
+    socket.on('get port status', function(data) {
+        console.log(data);
+        for (var i=0;i<data[1];i++){
+            if (data[0][i]==0){
+            document.getElementById('port_'+i).innerHTML = '<span id="action_'+i+'">Online</span>'
+            document.getElementById('port_'+i).className = "badge badge-success"
+            }
+            else{
+            document.getElementById('port_'+i).innerHTML = 'Offline'
+            document.getElementById('port_'+i).className = "badge badge-danger"
+            document.getElementById('action_'+i).innerHTML = '<form action="/request_turnon?server_port=' + document.getElementById('server_port_'+i).innerHTML +'" method="POST"><span id="port_{{i}}" class="badge badge-danger"><input type="submit" value="&crarr;" style="height:60%;font-size:8px"></input>Offline</span></form>'
+            }
+            //document.getElementById('ip_name_'+i).innerHTML = data[2][i]
+            document.getElementById('ip_version_'+i).innerHTML = data[3][i]
+            document.getElementById('ip_players_'+i).innerHTML = data[4][i]
+        }
+        document.getElementById('nav_date').innerHTML = 'Last update: ' + data[5]
+    });
+</script>
+{% endblock %}
+
+{% block body %}
+
+
+<nav class="header"> 
+
+<div style="display: flex; flex-direction: row; align-content: center">
+
+    <a href="/" style="margin-left: 50px; align-self: center">
+        
+        <img src="https://crafatar.com/avatars/{{current_user.uuid}}" style="height: 42px; width: 42px"></img>
+        
+    </a>
+
+    <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
+        <div class="navbar-nav">
+            {% if current_user.is_authenticated %}
+            <a class="nav-item nav-link" id="logout" href="/settings" style="color:white">Settings</a>
+            <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
+            {% else %}
+            <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
+            <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<p id = "nav_date" style="margin-right: 50px; align-self: center; text-align: center; margin-top: auto; margin-bottom: auto;">Last update: {{dt}}</p>
+
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %} 
+        {% if messages %} 
+            {% for category, message in messages %} 
+                {% if category =='error' %}
+                    <div class="alert alert-danger alter-dismissable fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success alter-dismissable fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                {% endif %} 
+            {% endfor %} 
+        {% endif %} 
+    {% endwith %}
+
+<div class="body-main">
+    <div class="body-main-list">
+        <div style="display: flex; flex-direction:row; justify-content:space-between;">
+            <h4 style="padding-top: 10px">Available IPs</h4>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refresh()"><i class="fa fa-refresh" style="align-self: center"></i></button>
+        </div>
+        <table class="table"> 
+            <thread style="padding-bottom: 10px">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">IP</th>
+                    <th scope="col">Port</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Server Name</th>
+                    <th scope="col">Version</th>
+                    <th scope="col">Online Players</th>
+                </tr>
+            </thread>
+        
+            {%for i in range(0, ports_len)%}
+                
+                <tr>
+                    <th scope="row">{{i+1}}</th>
+                    <td id="server_ip_{{i}}">{{ips[i]}} </td>
+                    <td id="server_port_{{i}}">{{local_ports[i]}}</td>
+                    <td>
+                    {% if ports_status[i]==0 %}
+                        <span id="port_{{i}}" class="badge badge-success">Online</span>
+                    {% else %}
+                        <span id="action_{{i}}"><span id="port_{{i}}" class="badge badge-danger">Offline</span></span>
+                    {% endif %}
+                    <td id="ip_name_{{i}}">{{descs[i]}}</td>
+                    <td id="ip_version_{{i}}"></td>
+                    <td id="ip_players_{{i}}">-</td>
+                    </td>
+                 </tr>
+            {%endfor%}
+
+        </table>
+    </div>
+    <div class="body-main-list-overflow" style="max-height: 384px;">
+        <div style="display: flex; flex-direction:row; justify-content:space-between;">
+            <h4 style="padding-top: 10px">User Activity</h4>
+            {% if current_user.is_privilleged %}
+            <button type="button" class="btn btn-light" id="user_manage" onclick="window.location.href='user_management'"><i class="fa fa-gear" style="align-self: center"></i></button>
+            {% endif %}
+        </div>
+        <table class="table"> 
+            <thread style="padding-bottom: 10px">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Username</th>
+                    <th scope="col">Last Online</th>
+                </tr>
+            </thread>
+            {%for i in range(0, userdata_len)%}
+                {% if usernames[i] %}
+                <tr>
+                    <th scope="row">{{i+1}}</th>
+                    <td style="display: flex; flex-direction: row; justify-content: flex-start;"><img style="width: 16px; height: 16px; align-self: center; margin-right: 4px;" src="https://crafatar.com/avatars/{{uuids[i]}}"></a>{{usernames[i]}}</td>
+                    <td>{{userdates[i]}}</td>
+                </tr>
+                {% endif %}
+            {%endfor%}
+        </table>
+    </div>
+</div>
+<div>
+    <div class="body-main-announcement" style="margin-top: 24px; margin-right: 128px; margin-left: 128px; padding-bottom: 10px;">
+        <h4 style="padding-top: 18px; padding-left: 10px">Announcements</h4>
+        <div style="width: 100%; height:100%; min-height:200px; margin: 10px; padding:10px; background-color: white; border-radius: 10px;" id="announcements_board_div">
+
+
+           Loading
+
+
+        </div>
+        {% if current_user.is_privilleged %}
+        <form>
+            <div class="form-group" style="padding-left: 20px; display:flex; flex-direction: row;">
+                <textarea class="form-control" id="announcement_text" rows="2"></textarea>
+                <button class="btn btn-primary" style="height: 40px" onclick="make_announcement()">Submit</button>
+            </div>
+        </form>
+        {% endif %}
+    </div>
+</div>
+
+
+{% endblock %}

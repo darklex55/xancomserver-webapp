@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+
+        <link
+        rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+        integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+        crossorigin="anonymous"
+        />
+        <link
+        rel="stylesheet"
+        href="https://stackpath.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css"
+        crossorigin="anonymous"
+        />
+
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Montserrat&display=swap" rel="stylesheet">
+        
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+        
+        <script type="text/javascript" charset="utf-8">
+            var socket = io();
+
+            function linkify(inputText) {
+                var replacedText, replacePattern1, replacePattern2, replacePattern3;
+
+                //URLs starting with http://, https://, or ftp://
+                replacePattern1 = /(\b(https?|ftp):\/\/[-A-Z0-9+&@#\/%?=~_|!:,.;]*[-A-Z0-9+&@#\/%=~_|])/gim;
+                replacedText = inputText.replace(replacePattern1, '<a href="$1" target="_blank">$1</a>');
+
+                //URLs starting with "www." (without // before it, or it'd re-link the ones done above).
+                replacePattern2 = /(^|[^\/])(www\.[\S]+(\b|$))/gim;
+                replacedText = replacedText.replace(replacePattern2, '$1<a href="http://$2" target="_blank">$2</a>');
+
+                //Change email addresses to mailto:: links.
+                replacePattern3 = /(([a-zA-Z0-9\-\_\.])+@[a-zA-Z\_]+?(\.[a-zA-Z]{2,6})+)/gim;
+                replacedText = replacedText.replace(replacePattern3, '<a href="mailto:$1">$1</a>');
+
+                return replacedText;
+            }
+                        
+            function refresh(){
+              socket.emit('ask port status', {data: 'gimme port pluiz'});
+            }
+
+            function make_announcement(){
+              var a_text = document.getElementById("announcement_text").value
+              if (a_text){
+                socket.emit('send_announcement', {data: a_text})
+              }
+            }
+
+        </script>
+
+        {% block sockets %}{% endblock %}
+
+        <style>
+
+
+
+            .header {
+                background-color: green;
+                color: white;
+                margin: 0px;
+                border-bottom: 1px solid white;
+                margin-bottom: 20px;
+                display: flex;
+                justify-content: space-between;
+                align-content: center;
+                align-items: center;
+                height: 60px;
+                font-family: 'Montserrat', sans-serif;
+            }
+            
+            .body-main {
+                
+                display: flex;
+                justify-content: space-around; 
+            
+            }
+            
+            .body-main-list {
+                border-radius: 10px;
+                background: rgb(205,205,205);
+                background: linear-gradient(90deg, rgba(205,205,205,0.15) 0%, rgba(222,222,222,0.35) 50%, rgba(205,205,205,0.15) 100%);
+                
+                display: flex;
+                flex-direction: column;
+                padding-left: 2.5%;
+                padding-right: 2.5%;
+                
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 500;
+                
+            }
+
+            .body-main-list-overflow {
+                border-radius: 10px;
+                background: rgb(205,205,205);
+                background: linear-gradient(90deg, rgba(205,205,205,0.15) 0%, rgba(222,222,222,0.35) 50%, rgba(205,205,205,0.15) 100%);
+                
+                display: flex;
+                flex-direction: column;
+                padding-left: 2.5%;
+                padding-right: 2.5%;
+                
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 500;
+
+                overflow-y: hidden;
+
+                scroll-padding: auto;
+                
+            }
+
+            .body-main-list-overflow:hover {
+              overflow-y: scroll;
+            }
+
+            .body-main-list-overflow::-webkit-scrollbar {
+                width: 12px;
+            }
+
+            .body-main-list-overflow::-webkit-scrollbar-track {
+                -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.3); 
+                border-radius: 10px;
+            }
+
+            .body-main-list-overflow::-webkit-scrollbar-thumb {
+                border-radius: 10px;
+                -webkit-box-shadow: inset 0 0 6px rgba(0,0,0,0.5); 
+            }
+
+            .body-main-announcement {
+                border-radius: 10px;
+                background: rgb(205,205,205);
+                background: linear-gradient(90deg, rgba(205,205,205,0.15) 0%, rgba(222,222,222,0.35) 50%, rgba(205,205,205,0.15) 100%);
+                
+                display: flex;
+                flex-direction: column;
+                padding-left: 2.5%;
+                padding-right: 2.5%;
+                
+                font-family: 'Montserrat', sans-serif;
+                font-weight: 500;
+                
+            }
+            
+            </style>
+
+
+        <title>{% block title %}base{% endblock %}</title>
+
+
+    </head>
+    <body>
+
+    {% block body %}{% endblock %}
+
+
+
+    <script
+      src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+      integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+      integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+      integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+      crossorigin="anonymous"
+    ></script>
+
+    <script
+      type="text/javascript"
+      src="{{ url_for('static', filename='index.js') }}"
+    ></script>
+
+    </body>
+
+</html>

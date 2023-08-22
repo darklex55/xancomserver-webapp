@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block sockets %}
+
+{% endblock %}
+
+{% block body %}
+
+
+<nav class="header"> 
+
+<div style="display: flex; flex-direction: row; align-content: center">
+
+    <a href="/" style="margin-left: 50px; align-self: center">
+        
+        <img src="https://crafatar.com/avatars/{{current_user.uuid}}" style="height: 42px; width: 42px"></img>
+        
+    </a>
+
+    <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
+        <div class="navbar-nav">
+            {% if current_user.is_authenticated %}
+            <a class="nav-item nav-link" id="logout" href="/settings" style="color:white">Settings</a>
+            <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
+            {% else %}
+            <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
+            <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<p id = "nav_date" style="margin-right: 50px; align-self: center; text-align: center; margin-top: auto; margin-bottom: auto;">Last update: {{dt}}</p>
+
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %} 
+        {% if messages %} 
+            {% for category, message in messages %} 
+                {% if category =='error' %}
+                    <div class="alert alert-danger alter-dismissable fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                {% else %}
+                    <div class="alert alert-success alter-dismissable fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                    </div>
+                {% endif %} 
+            {% endfor %} 
+        {% endif %} 
+    {% endwith %}
+
+<div class="body-main">
+    <div class="body-main-list">
+        <div style="display: flex; flex-direction:row; justify-content:space-between;">
+            <h4 style="padding-top: 10px">Registered Users</h4>
+        </div>
+        <table class="table"> 
+            <thread style="padding-bottom: 10px">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Username</th>
+                    <th scope="col">Email</th>
+                    <th scope="col">Validated</th>
+                    <th scope="col">Last Login</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thread>
+
+            <script>
+                if ( window.history.replaceState ) {
+                    window.history.replaceState( null, null, window.location.href );
+                }
+            </script>
+        
+            {%for i in range(0, user_obj[-1])%}
+                
+                <tr>
+                    <th scope="row">{{i+1}}</th>
+                    <td>{{user_obj[0][i]}} </td>
+                    <td>{{user_obj[1][i]}}</td>
+                    <td style="text-align: center;">
+                    {% if user_obj[2][i]==1 %}
+                        <span class="badge badge-success">Yes</span>
+                    {% else %}
+                        <span class="badge badge-danger">No</span>
+                    {% endif %}
+                    <td>{{user_obj[3][i]}}</td>
+                    <td style="text-align: center;">
+                        <form method="POST" style="padding: 2%; max-width: 60%; max-height: 60%; align-items: center; text-align: center;" class="body-main-list">
+                            <input type="hidden" id="email_{{i}}" name="email" value="{{user_obj[1][i]}}"></input>
+                            <button type="submit" class="btn btn-light" id="delete_user_submit_{{i}}"><i class="fa fa-trash" style="align-self: center; color: darkred" ></i></button>
+                        </form>
+                    </td>
+                    </td>
+                 </tr>
+            {%endfor%}
+
+        </table>
+    </div>
+
+</div>
+
+{% endblock %}

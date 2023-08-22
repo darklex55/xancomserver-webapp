@@ -1,0 +1,131 @@
+{% extends "base.html" %} 
+{% block title %}Sign Up{% endblock %} 
+{% block body %}
+
+        <nav class="header"> 
+
+    <div style="display: flex; flex-direction: row; align-content: center">
+    
+        <a href="" style="margin-left: 50px; align-self: center">
+            
+            
+            
+        </a>
+    
+        <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
+            <div class="navbar-nav">
+                {% if current_user.is_authenticated %}
+                <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
+                {% else %}
+                <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
+                <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    
+    </div>
+    
+    <p style="margin-right: 50px; align-self: center; text-align: center; margin-top: auto; margin-bottom: auto;">{{dt}}</p>
+    
+    </nav>
+
+    {% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+        {% for category, message in messages %} 
+            {% if category =='error' %}
+                <div class="alert alert-danger alter-dismissable fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+            {% else %}
+                <div class="alert alert-success alter-dismissable fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+            {% endif %} 
+        {% endfor %} 
+    {% endif %} 
+    {% endwith %}
+
+    <div style="padding: 15%;">
+        <form method="POST" style="padding: 2%" class="body-main-list">
+        <h3 align="center">Sign Up</h3>
+        {% if boolean %}
+
+        <div class="form-group">
+            <label for="e_mail">Email</label>
+            <input
+            type="email"
+            class="form-control"
+            id="e_mail"
+            name="e_mail"
+            placeholder="Enter email"
+            />
+        </div>
+
+        <div class="form-group">
+            <label for="password1">Password</label>
+            <input
+            type="password"
+            class="form-control"
+            id="password1"
+            name="password1"
+            placeholder="Enter password"
+            />
+        </div>
+        <div class="form-group">
+            <label for="password2">Password (Confirm)</label>
+            <input
+            type="password"
+            class="form-control"
+            id="password2"
+            name="password2"
+            placeholder="Confirm password"
+            />
+        </div>
+        <br />
+        <button type="submit" class="btn btn-primary">Submit</button>
+
+        {% else %}
+
+        <div class="form-group">
+            {% if error_username %}
+            <label for="userName">Username</label>
+            <input
+            type="text"
+            class="form-control is-invalid"
+            id="userName"
+            name="userName"
+            placeholder="Enter minecraft username"
+            info="test"
+            required
+            />
+            <div class="invalid-feedback">
+                Username not found
+            </div>
+            {% else %}
+            <label for="userName">Username</label>
+            <input
+            type="text"
+            class="form-control"
+            id="userName"
+            name="userName"
+            placeholder="Enter minecraft username"
+            info="test"
+            required
+            />
+            {% endif %}
+        </div>
+
+        <br />
+        <button type="submit" class="btn btn-primary">Check Availability</button>
+
+        {% endif %}
+
+        </form>
+    </div>
+    {% endblock %}

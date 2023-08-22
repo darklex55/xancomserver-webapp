@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block sockets %}
+<script>
+    socket.on('connect', function() {
+        socket.emit('ask port status', {data: 'gimme port pluiz'});
+    });
+
+    socket.on('get port status', function(data) {
+        console.log(data);
+        for (var i=0;i<data[1];i++){
+            if (data[0][i]==0){
+            document.getElementById('port_'+i).innerHTML = 'Online'
+            document.getElementById('port_'+i).className = "badge badge-success"
+            document.getElementById('action_'+i).innerHTML = '<form action="/manage/shutoff?name='+ document.getElementById('ip_name_'+i).innerHTML +'" method="POST"><button type="submit" class="close" id="refresh_ports" name="ip" onSubmit="return confirm(\'Are you sure you wish to stop the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Stop</span></button></form>'
+            }
+            else{
+            document.getElementById('port_'+i).innerHTML = 'Offline'
+            document.getElementById('port_'+i).className = "badge badge-danger"
+            document.getElementById('action_'+i).innerHTML = '<form action="/manage/turnon?name='+ document.getElementById('ip_name_'+i).innerHTML +'" method="POST"><button type="submit" class="close" id="refresh_ports" name="ip" onSubmit="return confirm(\'Are you sure you wish to start the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Start</span></button></form>'
+            }
+        }
+        document.getElementById('nav_date').innerHTML = 'Last update: ' + data[5]
+    });
+</script>
+{% endblock %}
+
+{% block body %}
+
+<nav class="header"> 
+
+<div style="display: flex; flex-direction: row; align-content: center">
+
+    <a href="/" style="margin-left: 50px; align-self: center">
+        
+        <img src="https://crafatar.com/avatars/{{current_user.uuid}}" style="height: 42px; width: 42px"></img>
+        
+    </a>
+
+    <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
+        <div class="navbar-nav">
+            {% if current_user.is_authenticated %}
+            <a class="nav-item nav-link" id="logout" href="/settings" style="color:white">Settings</a>
+            <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
+            {% else %}
+            <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
+            <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
+            {% endif %}
+        </div>
+    </div>
+
+</div>
+
+<p id = "nav_date" style="margin-right: 50px; align-self: center; text-align: center; margin-top: auto; margin-bottom: auto;">Last update: {{dt}}</p>
+
+</nav>
+
+{% with messages = get_flashed_messages(with_categories=true) %} 
+    {% if messages %} 
+        {% for category, message in messages %} 
+            {% if category =='error' %}
+                <div class="alert alert-danger alter-dismissable fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+            {% else %}
+                <div class="alert alert-success alter-dismissable fade show" role="alert">
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+                </div>
+            {% endif %} 
+        {% endfor %} 
+    {% endif %} 
+    {% endwith %}
+
+<div class="body-main">
+    <div class="body-main-list" style="min-width: 20%;">
+        <div style="display: flex; flex-direction:row; justify-content:space-between;">
+            <h4 style="padding-top: 10px" id="manage_server_name">Servers for </h4>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refresh()"><i class="fa fa-refresh" style="align-self: center"></i></button>
+        </div>
+        <table class="table"> 
+            <thread style="padding-bottom: 10px">
+                <tr>
+                    <th scope="col">#</th>
+                    <th scope="col">Port</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Folder Name</th>
+                    <th scope="col">On Scheduler</th>
+                    <th scope="col">Action</th>
+                </tr>
+            </thread>
+
+            {%for i in range(0, lens)%}
+                
+            <tr>
+                <th scope="row">{{i+1}}</th>
+                <td>{{ports[i]}}</td>
+                <td>
+                {% if statuses[i]==0 %}
+                    <span id="port_{{i}}" class="badge badge-success">Online</span>
+                {% else %}
+                    <span id="port_{{i}}" class="badge badge-danger">Offline</span>
+                {% endif %}
+                <td id="ip_name_{{i}}">{{dirs[i]}}</td>
+                <td style="text-align: center;">
+                    {% if schedules[i]==-1 %}
+                    <button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px" disabled>On</button>
+                    {% endif %}
+                    {% if schedules[i]==0 %}
+                    <form id="schedule_action_{{i}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
+                    {% endif %}
+                    {% if schedules[i]==1 %}
+                    <form id="schedule_action_{{i}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
+                    {% endif %}
+                </td>
+                <td id="action_{{i}}"></td>
+                </td>
+             </tr>
+             
+        {%endfor%}
+
+        </table>
+    </div>
+</div>
+
+<script>
+    let queryString = window.location.search;
+    let urlParams = new URLSearchParams(queryString);
+    document.getElementById('manage_server_name').innerHTML+=urlParams.get('ip')
+</script>
+
+{% endblock %}
