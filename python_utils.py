@@ -148,13 +148,15 @@ def getAnnouncemnts():
     uuids = []
     dates = []
     text = []
+    ids = []
     for announcement in announcements:
         usernames.append(announcement.created_by)
         uuids.append(announcement.created_by_uuid)
         dates.append(getDatetimeFormatedNoSeconds(announcement.created_on))
         content = announcement.content.replace('\n','<br>')
         text.append(content)
-    return [usernames, uuids, dates, text, len(usernames)]
+        ids.append(announcement.id)
+    return [usernames, uuids, dates, text, ids, len(usernames)]
 
 def updateInteractivity(user):
     user.last_login = datetime.now()
@@ -181,7 +183,7 @@ def sendValidationEmail(email, auth_key, url_root):
     msg = MIMEMultipart()
     msg['Subject'] = 'Xancomserver Account Verification'
     msg['From'] = 'darklex55server@gmail.com'
-    text = 'Please validate your account by clicking the following link: '+ url_root +'/verification?auth_key='+ auth_key
+    text = 'Please validate your account by clicking the following link: http://'+ url_root +'/verification?auth_key='+ auth_key
     msg.attach(MIMEText(text,'plain'))
     smtp = smtplib.SMTP('smtp.gmail.com:587')
     smtp.ehlo()
