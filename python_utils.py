@@ -40,6 +40,7 @@ def getPortStatus():
     desc = []
     mc_ver = []
     players = []
+    details = []
 
     servers = Server.query.all()
 

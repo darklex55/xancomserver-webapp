@@ -38,8 +38,6 @@
         socket.emit('get_announcements', {data: 'gimme announcements pluizz'});
     });
 
-    
-
     socket.on('get port status', function(data) {
         console.log(data);
         for (var i=0;i<data[1];i++){
@@ -58,6 +56,11 @@
         }
         document.getElementById('nav_date').innerHTML = 'Last update: ' + data[5]
     });
+
+    function refreshPorts(){
+        socket.emit('ask port status', {data: 'gimme port pluiz'});
+    }
+
 </script>
 {% endblock %}
 
@@ -118,7 +121,7 @@
     <div class="body-main-list">
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
             <h4 style="padding-top: 10px">Available IPs</h4>
-            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refresh()"><i class="fa fa-refresh" style="align-self: center"></i></button>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()"><i class="fa fa-refresh" style="align-self: center"></i></button>
         </div>
         <table class="table"> 
             <thread style="padding-bottom: 10px">
