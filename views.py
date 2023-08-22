@@ -1,4 +1,4 @@
-from flask import Blueprint, flash, render_template, request, session, redirect, url_for
+from flask import Blueprint, flash, render_template, request, session, redirect, url_for, make_response
 from website.python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getMinecraftServers, toggleGameServerSchedule
 from flask_login import login_required, current_user, logout_user
 from .models import User
@@ -18,6 +18,12 @@ def home():
     ips, local_ports, descs, ports_status, dirs, ports_len = getAvailablePortsFormated()
     usernames, uuids, userdates, __, __, userdata_len = getAllUserData()
     return render_template("home.html", dt = getCurrentDatetimeFormated(), ips=ips, local_ports = local_ports, descs=descs, ports_status = ports_status, ports_len = ports_len, usernames = usernames, userdates = userdates, uuids=uuids, userdata_len = userdata_len), 200
+
+@views.route('/print_my_ip', methods=['GET'])
+def print_my_ip():
+    print(request.remote_addr)
+    return redirect(url_for('views.home'))
+
 
 @views.route('/settings', methods=['GET', 'POST'])
 @login_required

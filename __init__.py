@@ -30,9 +30,6 @@ def create_app():
     create_database(app)
 
     with app.app_context():
-        Server.query.filter_by(ip='192.168.1.7').delete()
-        db.session.commit()
-
         if (not Server.query.filter_by(ip=SERVER_IP).first()):
             new_server = Server(ip=SERVER_IP, public_ip='xancomserver.ddns.me', current_status='Offline', mac='08:60:6e:f0:49:9b', is_local=True)
             db.session.add(new_server)
@@ -57,6 +54,7 @@ def create_app():
             statuses = []
             dirs = []
             i=0
+            print('Starting Scheduled Work')
             try:
                 res = requests.get('http://' + SERVER_IP + '/getMCServers', timeout=2)
                 if res.status_code==200:

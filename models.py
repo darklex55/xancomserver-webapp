@@ -46,5 +46,3 @@ class Game_server(db.Model):
     updated_at = db.Column(db.DateTime(timezone=True))
     include_schedule = db.Column(db.Boolean, default=True)
     status = db.Column(db.String(50))
-
-    

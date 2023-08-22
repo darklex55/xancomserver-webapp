@@ -3,7 +3,7 @@ from flask import Blueprint, make_response, render_template, request, redirect, 
 import requests
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from . import db
+from . import db, OFFICIAL_IP
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime
 from website.python_utils import produceHashFromText, sendValidationEmail;
@@ -79,7 +79,7 @@ def sign_up():
                 user.mail_auth_key = produceHashFromText(str(user.id))
                 db.session.commit()
 
-                sendValidationEmail(email, produceHashFromText(str(user.id)), request.url_root)
+                sendValidationEmail(email, produceHashFromText(str(user.id)), OFFICIAL_IP)
 
                 #login_user(new_user, remember=True)
                 session.clear()
