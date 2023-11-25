@@ -6,7 +6,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from . import db, OFFICIAL_IP
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime
-from .python_utils import produceHashFromText, sendValidationEmail,  sendPasswordResetEmail;
+from .python_utils import produceHashFromText
+from .email_utils import sendValidationEmail, sendPasswordResetEmail
 from random import random
 
 auth = Blueprint('auth', __name__)
