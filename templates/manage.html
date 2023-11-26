@@ -129,6 +129,31 @@
     </div>
 </div>
 
+<div class="body-main" style="margin-top: 80px">
+    <div class="body-main-list" style="min-width: 20%;">
+        <h4 style="padding-top: 10px; align-self: center;">SSH Access</h4>
+        <br>
+        <div style="display: flex; flex-direction: row; justify-content: space-around;">
+            <p>Generate a new SSH key by clicking the button bellow:</p>
+        </div>
+        <div style="display: flex; flex-direction: row; justify-content: space-around;">
+            <form method="POST" action="/manage/reset_ssh_key" id="server_key_generate_form" style="padding: 2%" class="body-main-list" onSubmit="return confirm('Are you sure you wish to generate a new key?');">
+                <button type="submit" class="btn btn-success" id="server_key_generate_btn">Generate</button>
+            </form>
+            <script>
+                //On submit generate button disabler
+                function btnDisable(event){
+                    document.getElementById('server_key_generate_btn').disabled = true;
+                }
+
+                const frm = document.getElementById('server_key_generate_form');
+                frm.addEventListener("submit", btnDisable);
+            </script>
+        </div>
+
+    </div>
+</div>
+
 <script>
     let queryString = window.location.search;
     let urlParams = new URLSearchParams(queryString);
