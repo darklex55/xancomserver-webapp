@@ -279,3 +279,19 @@ def toggleGameServerSchedule(ip, port):
             return True
 
     return False
+
+def generateNewSSHKeyRebel():
+    server = Server.query.first()
+
+    if server:
+        try:
+            res = requests.post('http://' + server.ip + '/rebel_reset_key', timeout=10)
+            if (res.status_code==200):
+                resj =  res.json()
+                if (resj.get('private_key')):
+                    return resj.get('private_key')
+             
+        except:
+            pass
+
+    return '-1'
