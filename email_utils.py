@@ -34,7 +34,7 @@ def sendPrivateKey(email, private_key):
     msg = MIMEMultipart()
     msg['Subject'] = 'Xancomserver Account Password Reset'
     msg['From'] = 'darklex55server@gmail.com'
-    text = 'You can find attached the private key in OpenSSH format to be used for ssh/sftp connection.'
+    text = "You can find attached the private key in OpenSSH format to be used for ssh/sftp connection. <b>Note that the key will be valid for 3 days</b> - after that period you'll need to generate a new key."
     msg.attach(MIMEText(text,'plain'))
     attachment = MIMEText(private_key)
     attachment.add_header('Content-Disposition', 'attachment', filename="rsakey")

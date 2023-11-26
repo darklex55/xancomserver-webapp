@@ -46,7 +46,7 @@ def settings():
         4: "Shutdown Package sent. Please refresh the page in a while to confirm the server's status.",
         5: "Shutdown Package has already been sent. Please wait.",
         6: "Server appears to be offline.",
-        21: "Key has been shared to you via email. Any older key has been invalidated.",
+        21: "The new key has been shared to you via email. Any older key has been invalidated.",
         22: "Could not reset key - unexpected error."}
         flash(messages.get(int(request.args['msg'])), category=request.args['category'])
 
@@ -250,17 +250,18 @@ def delete_announcement():
 
     return redirect(url_for('views.home'))
 
-@views.route('/settings/reset_ssh_key')
+@views.route('/manage/reset_ssh_key', methods=['POST'])
 @login_required
 def reset_ssh_key():
     message = 22
     category = 'error'
-    
+
     if(current_user.is_privilleged):
         key = generateNewSSHKeyRebel()
-        sendPrivateKey(current_user.email, key)
-        message = 21
-        category = 'success'
+        if (key != '-1'):
+            sendPrivateKey(current_user.email, key)
+            message = 21
+            category = 'success'
 
     return redirect(url_for('views.settings') + '?msg=' + str(message)+ '&category=' + category)
 
