@@ -9,7 +9,7 @@ from hashlib import sha256
 import requests
 import os
 
-from . import SERVER_IP, OFFICIAL_IP
+from . import SERVER_IP, OFFICIAL_DOMAIN
 
 
 def getCurrentDatetimeFormated():
@@ -133,7 +133,7 @@ def getSSHPortFormated():
     try:
         res = requests.get('http://' + SERVER_IP + '/hello', timeout=1)
         
-        return OFFICIAL_IP+':2255' if res.status_code==200 else 'Server Offline'
+        return OFFICIAL_DOMAIN+':2255' if res.status_code==200 else 'Server Offline'
     except:
         return 'Server Offline'
 

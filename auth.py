@@ -3,7 +3,7 @@ from flask import Blueprint, make_response, render_template, request, redirect, 
 import requests
 from .models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-from . import db, OFFICIAL_IP
+from . import db, OFFICIAL_DOMAIN
 from flask_login import login_user, login_required, logout_user, current_user
 from datetime import datetime
 from .python_utils import produceHashFromText
@@ -81,7 +81,7 @@ def sign_up():
                 user.mail_auth_key = produceHashFromText(str(user.id))
                 db.session.commit()
 
-                sendValidationEmail(email, produceHashFromText(str(user.id)), OFFICIAL_IP)
+                sendValidationEmail(email, produceHashFromText(str(user.id)), OFFICIAL_DOMAIN)
 
                 #login_user(new_user, remember=True)
                 session.clear()
@@ -137,7 +137,7 @@ def forgot_password():
             if user:
                 user.auth_key = produceHashFromText(str(user.email) + str(user.password) + str(random()))
                 db.session.commit()
-                sendPasswordResetEmail(email, user.auth_key, OFFICIAL_IP)
+                sendPasswordResetEmail(email, user.auth_key, OFFICIAL_DOMAIN)
 
             session.clear()
             flash('If the details provided were correct, check your email for the next steps (check Spam folder as well).', category='success')
