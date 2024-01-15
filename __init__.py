@@ -1,21 +1,32 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
-from os import path
 from flask_login import LoginManager
 from flask_apscheduler import APScheduler
 
 import requests
-from mcstatus import MinecraftServer
+import json
+from os import path
 from datetime import datetime
+from mcstatus import MinecraftServer
 
 db = SQLAlchemy()
-DB_NAME = 'database.db'
-SERVER_IP = '192.168.1.4'
-OFFICIAL_IP = 'xancomserver.ddns.me'
+
+if not path.exists('website/config.json'):
+    raise Exception("No config file found")
+
+cfg = json.load(open('website/config.json'))['settings']
+
+DB_NAME = cfg['DB_FILENAME']
+SERVER_IP = cfg['SERVER_IP']
+OFFICIAL_DOMAIN = cfg['OFFICIAL_DOMAIN']
+SMTP_FROM = cfg['SMTP_FROM']
+SMTP_LOGIN = cfg['SMTP_LOGIN']
+SMTP_PASSWORD = cfg['SMTP_PASSWORD']
+
 
 def create_app():
     app = Flask(__name__)
-    app.config['SECRET_KEY'] = 'kara2004'
+    app.config['SECRET_KEY'] = cfg['SECRET_KEY']
     app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{DB_NAME}'
     db.init_app(app)
 
@@ -31,7 +42,7 @@ def create_app():
 
     with app.app_context():
         if (not Server.query.filter_by(ip=SERVER_IP).first()):
-            new_server = Server(ip=SERVER_IP, public_ip='xancomserver.ddns.me', current_status='Offline', mac='08:60:6e:f0:49:9b', is_local=True)
+            new_server = Server(ip=SERVER_IP, public_ip=OFFICIAL_DOMAIN, current_status='Offline', mac='08:60:6e:f0:49:9b', is_local=True)
             db.session.add(new_server)
             db.session.commit()
 
@@ -82,7 +93,7 @@ def create_app():
                         dirs.append(dir)
                         i+=1
             except:
-                print(' Scheduler - Could not communicate with the server.')
+                print('Scheduler - Could not communicate with the server.')
 
             for i in range(len(ips)):
                 server_record = Server.query.filter_by(ip=ips[i]).first()
