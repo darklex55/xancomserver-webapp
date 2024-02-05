@@ -73,7 +73,7 @@ def sign_up():
                 flash('Email already exists', category='error')
             else:
                 is_privilleged = True if session['username'] in ['darklex', 'iolkos'] else False
-                new_user = User(username=session['username'], uuid=session['uuid'], password=generate_password_hash(password1, method='sha256'), is_privilleged = is_privilleged, email=email)
+                new_user = User(username=session['username'], uuid=session['uuid'], password=generate_password_hash(password1, method='pbkdf2'), is_privilleged = is_privilleged, email=email)
                 db.session.add(new_user)
                 db.session.commit()
 
@@ -195,7 +195,7 @@ def reset_password():
                     flash('You cannot use the same password as you had before. Please change your password.', category='error')
                     return make_response(render_template("reset_password.html"))
                 else:
-                    user.password=generate_password_hash(password1, method='sha256')
+                    user.password=generate_password_hash(password1, method='pbkdf2')
                     user.auth_key = produceHashFromText(str(user.email) + str(user.password) + str(random()))
                     db.session.commit()
                     flash("New password set successfuly!", category='success')

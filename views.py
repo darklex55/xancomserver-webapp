@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, render_template, request, session, redirect, url_for, make_response
-from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getMinecraftServers, toggleGameServerSchedule, generateNewSSHKeyRebel
+from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getJavaServers, toggleGameServerSchedule, generateNewSSHKeyRebel
 from .email_utils import sendPrivateKey
 from flask_login import login_required, current_user, logout_user
 from .models import User, Announcements
@@ -115,7 +115,7 @@ def manage():
 
                     flash(messages[int(request.args['msg'])], category=request.args['category'])
 
-                ips, ports, descs, statuses, dirs, lens, schedules = getMinecraftServers(request.args['ip'])
+                ips, ports, descs, statuses, dirs, lens, schedules = getJavaServers(request.args['ip'])
                 return render_template("manage.html", dt = getCurrentDatetimeFormated(), ips = ips, ports = ports, descs = descs, statuses=statuses, dirs=dirs, lens=lens, schedules=schedules)
             else:
                 return redirect(url_for('views.settings') + '?msg=6&category=error')
