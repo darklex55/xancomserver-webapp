@@ -3,7 +3,7 @@ from datetime import datetime
 from flask_login import current_user
 from .models import User, db, Announcements, Server, Server_status, Game_server
 from sqlalchemy import desc
-from mcstatus import MinecraftServer
+from mcstatus import JavaServer
 from hashlib import sha256
 
 import requests
@@ -47,7 +47,7 @@ def getPortStatus():
                     ports = res.get('answer')[1]
                     i=0
                     for port in ports:
-                        server = MinecraftServer.lookup(s.ip+':'+str(port))
+                        server = JavaServer.lookup(s.ip+':'+str(port))
                         result = 1
                         
                         try:
@@ -71,7 +71,7 @@ def getPortStatus():
             except:
                 return [],0,[],[],0, getCurrentDatetimeFormated()
         else:
-            server = MinecraftServer.lookup(s.public_ip)
+            server = JavaServer.lookup(s.public_ip)
             result = 1
             try:
                 stats = server.status()
@@ -245,7 +245,7 @@ def attempt_shutdown(ip):
     
     return attempt
 
-def getMinecraftServers(ip):
+def getJavaServers(ip):
     data = getAvailablePortsFormated()
     print(data)
     schedules = []

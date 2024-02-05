@@ -7,7 +7,7 @@ import requests
 import json
 from os import path
 from datetime import datetime
-from mcstatus import MinecraftServer
+from mcstatus import JavaServer
 
 db = SQLAlchemy()
 
@@ -38,7 +38,7 @@ def create_app():
 
     from .models import User, Server, Game_server
 
-    create_database(app)
+    app = create_database(app)
 
     with app.app_context():
         if (not Server.query.filter_by(ip=SERVER_IP).first()):
@@ -73,7 +73,7 @@ def create_app():
                     all_ports = res.get('answer')[1]
 
                     for port in all_ports:
-                        server = MinecraftServer.lookup(SERVER_IP+':'+str(port))
+                        server = JavaServer.lookup(SERVER_IP+':'+str(port))
                         stat = 1
                         player = 0
                         dir = ''
@@ -155,5 +155,8 @@ def create_app():
 
 def create_database(app):
     if not path.exists('website/' + DB_NAME):
-        db.create_all(app=app)
-        print('Created Database')
+        with app.app_context():
+            db.create_all()
+            print('Created Database')
+
+    return app
