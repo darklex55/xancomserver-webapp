@@ -1,6 +1,23 @@
 {% extends "base.html" %}
 {% block title %}Home{% endblock %}
 
+{% block sockets %}
+
+<script>
+
+    function add_new_open(){
+        document.getElementById('add_server_section').innerHTML='<form action="/settings/add_unmanaged" method="POST" style="padding: 2%; display: flex; flex-direction: row" class="body-main-list"><input id="new_server_ip" type="text" name="server_ip" style="display: inline-block" placeholder="example.duckdns.org" required><button type="submit" class="btn btn-success" style="display: inline-block">Add</button><button onclick="close_new_open()" class="btn btn-secondary" style="display: inline-block">X</button></form>';
+        document.getElementById('new_server_ip').select()
+    }
+
+    function close_new_open(){
+        document.getElementById('add_server_section').innerHTML='<button type="button" class="btn btn-light" id="add_new_button" onclick="add_new_open()" style="align-self: center;">Add unmanaged server <i class="fa fa-plus-square"></i></button>'
+    }
+
+</script>
+
+{% endblock %}
+
 {% block body %}
 
 <nav class="header"> 
@@ -70,48 +87,65 @@
 
     {% if current_user.is_privilleged %}
     <div class="body-main-list" style="min-width: 20%;">
-        <h4 style="padding-top: 10px; align-self: center;">Active Servers</h4>
+        <div style="display: flex; flex-direction:row;">
+            <h4 style="padding-top: 10px; align-self: center;">Active Servers</h4>
+            
+        </div>
         <br>
         <table class="table"> 
             <thread style="padding-bottom: 10px">
                 <tr>
-                    <th scope="col">#</th>
-                    <th scope="col">Local IP</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Actions</th>
+                    <th scope="col"><p style="display: inline-block;">#</p></th>
+                    <th scope="col"><p style="display: inline-block;">Local IP</p></th>
+                    <th scope="col"><p style="display: inline-block;">Status</p></th>
+                    <th scope="col">Actions</th>                    
                 </tr>
             </thread>
         
-            {%for i in range(0, servers[-1])%}
+            {%for i in range(0, servers[-2])%}
                 
             <tr>
                 <th scope="row">{{i+1}}</th>
-                {% if servers[1][i]=='Online'%}
+                {% if servers[1][i]=='Online' or servers[3][i]==0%}
                 <td><a href="/manage?ip={{servers[0][i]}}">{{servers[0][i]}}</a></td>
                 {% else %}
                 <td>{{servers[0][i]}} </td>
                 {% endif %}
                 <td>
-                    {% if servers[1][i]=='Online' %}
-                        <span id="port_{{i}}" class="badge badge-success" style="display: inline-block;">Online</span>
+                    {% if servers[3][i]==1 %}
+                        {% if servers[1][i]=='Online' %}
+                            <span id="port_{{i}}" class="badge badge-success" style="display: inline-block;">Online</span>
+                        {% else %}
+                            <span id="port_{{i}}" class="badge badge-danger">Offline</span>
+                        {% endif %}
                     {% else %}
-                        <span id="port_{{i}}" class="badge badge-danger">Offline</span>
+                        <span id="port_{{i}}" class="badge badge-secondary">Unknown</span>
                     {% endif %}
                 </td>
                 <td style="text-align: center;">
-                    {% if servers[1][i]=='Online' %}
-                    <span style="margin: auto;">
-                        <form action="/settings/turn_off" method="POST">
-                            <button type="submit" class="close" id="refresh_ports" name="ip" value={{servers[0][i]}} onSubmit="return confirm('Are you sure you wish to startup the server?');">
-                                <span aria-hidden="true" style="font-size: 12px;margin: auto;">Shutdown</span>
-                            </button>
-                        </form>
-                    </span>
+                    {% if servers[3][i]==1 %}
+                        {% if servers[1][i]=='Online' %}
+                        <span style="margin: auto;">
+                            <form action="/settings/turn_off" method="POST">
+                                <button type="submit" class="close" id="refresh_ports" name="ip" value={{servers[0][i]}} onSubmit="return confirm('Are you sure you wish to startup the server?');">
+                                    <span aria-hidden="true" style="font-size: 12px;margin: auto;">Shutdown</span>
+                                </button>
+                            </form>
+                        </span>
+                        {% else %}
+                            <span style="margin: auto;">
+                                <form action="/settings/turn_on" method="POST">
+                                    <button type="submit" class="close" id="refresh_ports" name="ip" value={{servers[0][i]}} onSubmit="return confirm('Are you sure you wish to startup the server?');">
+                                        <span aria-hidden="true" style="font-size: 12px;margin: auto;">Turn On</span>
+                                    </button>
+                                </form>
+                            </span>
+                        {% endif %}
                     {% else %}
                         <span style="margin: auto;">
-                            <form action="/settings/turn_on" method="POST">
-                                <button type="submit" class="close" id="refresh_ports" name="ip" value={{servers[0][i]}} onSubmit="return confirm('Are you sure you wish to startup the server?');">
-                                    <span aria-hidden="true" style="font-size: 12px;margin: auto;">Turn On</span>
+                            <form action="/settings/remove_unmanaged" method="POST">
+                                <button type="submit" class="close" id="refresh_ports" name="ip" value={{servers[0][i]}} onSubmit="return confirm('Are you sure you wish to remove the server? This will also remove any related game server.');">
+                                    <span aria-hidden="true" style="font-size: 12px;margin: auto; color: brown">Delete</span>
                                 </button>
                             </form>
                         </span>
@@ -122,6 +156,9 @@
         {%endfor%}    
 
         </table>
+        <div id="add_server_section" style="display: flex; flex-direction: column;">
+            <button type="button" class="btn btn-light" id="add_new_button" onclick="add_new_open()" style="align-self: center;">Add unmanaged server <i class="fa fa-plus-square"></i></button>
+        </div>
     </div>
     {% else %}
     <div></div>

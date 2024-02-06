@@ -35,6 +35,7 @@ def getPortStatusSocket(server_ip = None):
     mc_ver = []
     players = []
     details = []
+    is_local = []
     ids = []
 
     servers = Server.query.filter_by(ip=server_ip).all() if server_ip else Server.query.all()
@@ -50,12 +51,13 @@ def getPortStatusSocket(server_ip = None):
                     for port in ports:
                         server = JavaServer.lookup(s.ip+':'+str(port))
                         result = 1
-
+                        
                         try:
                             stats = server.status()
                             #desc.append(stats.description)
                             mc_ver.append(stats.version.name)
                             players.append(str(stats.players.online)+'/'+str(stats.players.max))
+
                             result = 0
                         except:
                             #desc.append('-')
@@ -64,6 +66,7 @@ def getPortStatusSocket(server_ip = None):
 
                             result = 1
 
+                        is_local.append(True)
                         ids.append(sha1(bytes(str(s.public_ip) + '..' + str(port), encoding='utf-8')).hexdigest())
                         desc.append(res.get('answer')[0][i])
                         i+=1
@@ -72,27 +75,30 @@ def getPortStatusSocket(server_ip = None):
             except:
                 return [],[],0,[],[],0, getCurrentDatetimeFormated()
         else:
-            server = JavaServer.lookup(s.public_ip)
-            result = 1
-            try:
-                stats = server.status()
-                mc_ver.append(stats.version.name)
-                players.append(str(stats.players.online)+'/'+str(stats.players.max))
-                desc.append(stats.description)
-                result = 0
-            except:
-                desc.append('-')
-                mc_ver.append('-')
-                players.append('-')
-
+            game_servers = Game_server.query.filter_by(server_id = s.id)
+            for gs in game_servers:
+                server = JavaServer.lookup(s.ip+':'+str(gs.port))
                 result = 1
-            
-            i+=1    
-            status.append(result)
+                try:
+                    stats = server.status()
+                    mc_ver.append(stats.version.name)
+                    players.append(str(stats.players.online)+'/'+str(stats.players.max))
+
+                    result = 0
+                except:
+                    mc_ver.append('-')
+                    players.append('-')
+
+                    result = 1
+
+                is_local.append(False)
+                ids.append(sha1(bytes(str(s.public_ip) + '..' + str(gs.port), encoding='utf-8')).hexdigest())
+                desc.append('')
+                status.append(result)
 
     updateInteractivity(current_user)
-                
-    return ids, status, len(status), desc, mc_ver, players, getCurrentDatetimeFormated()
+
+    return ids, status, len(status), desc, mc_ver, players, is_local, getCurrentDatetimeFormated()
 
 def getAvailablePortsFormated(server_ip=None):
     ip = []
@@ -101,6 +107,7 @@ def getAvailablePortsFormated(server_ip=None):
     descs = []
     dirs = []
     ids = []
+    is_local = []
     i=0
 
     servers = Server.query.filter_by(ip=server_ip).all() if server_ip else Server.query.all()
@@ -111,25 +118,37 @@ def getAvailablePortsFormated(server_ip=None):
                 res = requests.get('http://' + server.ip + '/getMCServers', timeout=2)
                 if res.status_code==200:
                     res = res.json()
+                    print(res.get('answer'))
                     for port in res.get('answer')[1]:
+                        is_local.append(True)
                         ip.append(server.public_ip)
                         local_port.append(port)
                         port_status.append(1)
                         descs.append(res.get('answer')[0][i])
                         dirs.append(res.get('answer')[2][i])
-                        i+=1
                         ids.append(sha1(bytes(str(server.public_ip) + '..' + str(port), encoding='utf-8')).hexdigest())
+                        i+=1
             except:
                 continue
         else:
-            ip.append(':'.join(server.public_ip.split(':')[:-1]))
-            local_port.append(server.split(':')[-1])
-            port_status.append(1)
-            descs.append('-')
-            dirs.append('-')
-            i+=1
+            game_servers = Game_server.query.filter_by(server_id = server.id)
+            for gs in game_servers:
+                is_local.append(False)
+                ip.append(server.public_ip)
+                local_port.append(gs.port)
+                port_status.append(1)
+                js = JavaServer.lookup(server.ip + ':' + str(gs.port))
+                try:
+                    js_status = js.status()
+                    print(js_status.motd.parsed[0])
+                    descs.append(js_status.motd.parsed[0])
+                except:
+                    descs.append('')
+                ids.append(sha1(bytes(str(server.public_ip) + '..' + str(gs.port), encoding='utf-8')).hexdigest())
+                dirs.append('')
+                
 
-    return ip, local_port, descs, port_status, dirs, len(port_status), ids
+    return ip, local_port, descs, port_status, dirs, len(port_status), ids, is_local
 
 def getSSHPortFormated():
     try:
@@ -187,20 +206,22 @@ def getServers():
     servers = Server.query.all()
     ips = []
     statuses = []
+    is_local = []
     i=0
 
     for server in servers:
-        if server.is_local:
-            ips.append(server.ip)
-            current_status = getServerStatus(server.ip)
-            server.current_status = current_status
-            statuses.append(current_status)
-            i+=1
+        ips.append(server.ip)
+        current_status = getServerStatus(server.ip)
+        server.current_status = current_status
+        statuses.append(current_status)
+        is_local.append(1 if server.is_local else 0)
+        i+=1
 
     if (i>0):
         db.session.commit()
     
-    return [ips, statuses, i]
+    print([ips, statuses, i, is_local])
+    return [ips, statuses, i, is_local]
 
 def attempt_wol(ip):
     server = Server.query.filter_by(ip=ip).first()
