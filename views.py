@@ -186,26 +186,29 @@ def manage():
 def request_turnon():
     updateInteractivity(current_user)
     if 'server_port' in request.args and 'server_ip' in request.args:
-        try:
-            res = requests.get('http://' + request.args['server_ip'] + '/getMCServers', timeout=2)
-            if res.status_code==200:
-                res = res.json()
-                ports = res.get('answer')[1]
-                if request.args['server_port'] in ports:
-                    try:
-                        requests.get('http://'+ request.args['server_ip'] +'/run_mc_server?name='+res.get('answer')[2][ports.index(request.args['server_port'])], timeout=1)
-                        flash('Server Start Request Submitted', 'success')
-                        return redirect(url_for('views.home'))
-                    except:
+        server = Server.query.filter_by(public_ip = request.args['server_ip']).first()
+        if server:
+            try:
+                res = requests.get('http://' + server.ip + '/getMCServers', timeout=2)
+                if res.status_code==200:
+                    res = res.json()
+                    ports = res.get('answer')[1]
+                    if request.args['server_port'] in ports:
+                        try:
+                            requests.get('http://'+ server.ip +'/run_mc_server?name='+res.get('answer')[2][ports.index(request.args['server_port'])], timeout=1)
+                            flash('Server Start Request Submitted', 'success')
+                            return redirect(url_for('views.home'))
+                        except:
+                            return redirect(url_for('views.home'))
+                    else:
                         return redirect(url_for('views.home'))
                 else:
                     return redirect(url_for('views.home'))
-            else:
+
+            except:
                 return redirect(url_for('views.home'))
-
-        except:
+        else:
             return redirect(url_for('views.home'))
-
     else:
         return redirect(url_for('views.home'))
 

@@ -73,7 +73,7 @@ def getPortStatusSocket(server_ip = None):
                         status.append(result)
 
             except:
-                return [],[],0,[],[],0, getCurrentDatetimeFormated()
+                return [],[],0,[],[],0, [], getCurrentDatetimeFormated()
         else:
             game_servers = Game_server.query.filter_by(server_id = s.id)
             for gs in game_servers:
