@@ -10,9 +10,9 @@ def run_sockets(socketio):
     @socketio.on('ask port status')
     def handle_message(data):
         server_ip = data.get('data', None)
-        ids, status, status_len, desc, mc_ver, players, date_now = getPortStatusSocket(server_ip)
+        ids, status, status_len, desc, mc_ver, players, is_local, date_now = getPortStatusSocket(server_ip)
         emit('get port status', json.dumps({"ids": ids, "status": status, "status_len": status_len, 
-                                        "desc": desc, "mc_ver": mc_ver, "players": players, "date_now": date_now}))
+                                        "desc": desc, "mc_ver": mc_ver, "players": players, "date_now": date_now, "is_local": is_local}))
 
     @socketio.on('get_announcements')
     def handle_saved_announcements(data):

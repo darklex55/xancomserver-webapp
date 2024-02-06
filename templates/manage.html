@@ -13,6 +13,7 @@
         document.getElementById('refresh_ports_icon').className = 'fa fa-refresh';
 
         data = JSON.parse(data);
+        console.log(data)
         
         var row;
         for (var i=0; i<data['ids'].length; i++){
@@ -20,11 +21,18 @@
             try{
                 if (data['status'][i]==0){
                     row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-success">Online</span>'
-                    row.querySelector('#action').innerHTML = '<form action="/manage/shutoff?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_off_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to stop the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Stop</span></button></form>'
+                    if (data['is_local'][i]){
+                        row.querySelector('#action').innerHTML = '<form action="/manage/shutoff?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_off_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to stop the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Stop</span></button></form>'
+                    }
                 }
                 else{
                     row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-danger">Offline</span>'
-                    row.querySelector('#action').innerHTML = '<form action="/manage/turnon?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_on_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to start the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Start</span></button></form>'
+                    if (data['is_local'][i]){
+                        row.querySelector('#action').innerHTML = '<form action="/manage/turnon?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_on_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to start the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Start</span></button></form>'
+                    }
+                }
+                if(!data['is_local'][i]){
+                    row.querySelector('#action').innerHTML = '<form action="/manage/remove_unmanaged_gameserver" method="POST"><button type="submit" class="close" id="refresh_ports" name="gameserver_ip" value="'+manage_server_ip+':'+row.querySelector('#server_port').innerHTML+'"><span aria-hidden="true" style="font-size: 12px;margin: auto; color: brown">Delete</span></button></form>'
                 }
             }
             catch(e){
@@ -41,6 +49,16 @@
         document.getElementById('refresh_ports_icon').className = 'fa fa-spinner fa-spin';
         socket.emit('ask port status', {data: manage_server_ip});
     }
+
+    function add_new_open(){
+        document.getElementById('add_server_section').innerHTML='<form action="/manage/add_unmanaged_gameserver" method="POST" style="padding: 2%; display: flex; flex-direction: row" class="body-main-list"><input id="new_server_port" type="text" name="server_port" style="display: inline-block" placeholder="Server port" required><button type="submit" class="btn btn-success" style="display: inline-block" name="server_ip" value="'+manage_server_ip+'">Add</button><button onclick="close_new_open()" class="btn btn-secondary" style="display: inline-block">X</button></form>';
+        document.getElementById('new_server_port').select()
+    }
+
+    function close_new_open(){
+        document.getElementById('add_server_section').innerHTML='<button type="button" class="btn btn-light" id="add_new_button" onclick="add_new_open()" style="align-self: center;">Add unmanaged server <i class="fa fa-plus-square"></i></button>'
+    }
+
 </script>
 
 {% endblock %}
@@ -101,7 +119,7 @@
     <div class="body-main-list" style="min-width: 20%;">
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
             <h4 style="padding-top: 10px" id="manage_server_name">Servers for </h4>
-            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()"><i class="fa fa-refresh" id="refresh_ports_icon" style="align-self: center"></i></button>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()" disabled><i class="fa fa-spinner fa-spin" id="refresh_ports_icon" style="align-self: center"></i></button>
         </div>
         <table class="table"> 
             <thread style="padding-bottom: 10px">
@@ -128,13 +146,13 @@
                 {% endif %}
                 <td id="ip_name">{{dirs[i]}}</td>
                 <td style="text-align: center;">
-                    {% if schedules[i]==-1 %}
+                    {% if schedules[i]==-1 or not managed %}
                     <button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px" disabled>On</button>
                     {% endif %}
-                    {% if schedules[i]==0 %}
+                    {% if schedules[i]==0 and managed %}
                     <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
                     {% endif %}
-                    {% if schedules[i]==1 %}
+                    {% if schedules[i]==1 and managed %}
                     <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
                     {% endif %}
                 </td>
@@ -145,8 +163,18 @@
         {%endfor%}
 
         </table>
+
+
+        {% if not managed %}
+        <div id="add_server_section" style="display: flex; flex-direction: column;">
+            <button type="button" class="btn btn-light" id="add_new_button" onclick="add_new_open()" style="align-self: center;">Add minecraft server <i class="fa fa-plus-square"></i></button>
+        </div>
+        {% endif %}
+
     </div>
 </div>
+
+{% if managed %}
 
 <div class="body-main" style="margin-top: 80px">
     <div class="body-main-list" style="min-width: 20%;">
@@ -173,10 +201,10 @@
     </div>
 </div>
 
+{% endif %}
+
 <script>
-    let queryString = window.location.search;
-    let urlParams = new URLSearchParams(queryString);
-    document.getElementById('manage_server_name').innerHTML+=urlParams.get('ip')
+    document.getElementById('manage_server_name').innerHTML+=manage_server_ip
 </script>
 
 {% endblock %}

@@ -2,7 +2,7 @@ from flask import Blueprint, flash, render_template, request, session, redirect,
 from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getJavaServers, toggleGameServerSchedule, generateNewSSHKeyRebel
 from .email_utils import sendPrivateKey
 from flask_login import login_required, current_user, logout_user
-from .models import User, Announcements
+from .models import User, Announcements, Server, Game_server
 from . import SERVER_IP, db
 
 import requests
@@ -16,9 +16,9 @@ def home():
     if current_user.uuid == '8667ba71b85a4004af54457a9734eed7':
         flash('Buy minecraft you filthy pirate.', category='error')
     updateInteractivity(current_user)
-    ips, local_ports, descs, ports_status, dirs, ports_len, ids = getAvailablePortsFormated()
+    ips, local_ports, descs, ports_status, dirs, ports_len, ids, is_local = getAvailablePortsFormated()
     usernames, uuids, userdates, __, __, userdata_len = getAllUserData()
-    return render_template("home.html", dt = getCurrentDatetimeFormated(), ips=ips, local_ports = local_ports, descs=descs, ports_status = ports_status, ports_len = ports_len, usernames = usernames, userdates = userdates, uuids=uuids, userdata_len = userdata_len, ids=ids), 200
+    return render_template("home.html", dt = getCurrentDatetimeFormated(), ips=ips, local_ports = local_ports, descs=descs, ports_status = ports_status, ports_len = ports_len, usernames = usernames, userdates = userdates, uuids=uuids, userdata_len = userdata_len, ids=ids, is_local=is_local), 200
 
 @views.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -40,6 +40,10 @@ def settings():
         4: "Shutdown Package sent. Please refresh the page in a while to confirm the server's status.",
         5: "Shutdown Package has already been sent. Please wait.",
         6: "Server appears to be offline.",
+        11: "Host added to list",
+        12: "Host already exists",
+        13: "Host removed from list",
+        14: "Host not found",
         21: "The new key has been shared to you via email. Any older key has been invalidated.",
         22: "Could not reset key - unexpected error."}
         flash(messages.get(int(request.args['msg'])), category=request.args['category'])
@@ -93,6 +97,62 @@ def turn_on():
 
     return redirect(url_for('views.settings') + '?msg=' + str(message)+ '&category=' + category)
 
+@views.route('/settings/add_unmanaged', methods=['POST'])
+@login_required
+def add_unmanaged():
+    updateInteractivity(current_user)
+    message = ''
+    category = ''
+    if current_user.is_privilleged:
+        if 'server_ip' in request.form:
+            if Server.query.filter_by(ip = request.form['server_ip']).first():
+                message = 12
+                category = 'error'
+            else:
+                new_server = Server(is_local=False, ip = request.form['server_ip'], public_ip = request.form['server_ip'], mac = None, current_status = None)
+                db.session.add(new_server)
+                db.session.commit()
+                message = 11
+                category = 'success'
+        else:
+            message = 3
+            category = 'error'
+    else:
+        message = 3
+        category = 'error'
+
+    return redirect(url_for('views.settings') + '?msg=' + str(message)+ '&category=' + category)
+
+@views.route('/settings/remove_unmanaged', methods=['POST'])
+@login_required
+def remove_unmanaged():
+    updateInteractivity(current_user)
+    message = ''
+    category = ''
+    if current_user.is_privilleged:
+        if 'ip' in request.form:
+            server = Server.query.filter_by(ip = request.form['ip']).first()
+            if server and not server.is_local:
+                game_servers = Game_server.query.filter_by(server_id = server.id).all()
+                for gs in game_servers:
+                    db.session.delete(gs)
+            
+                db.session.delete(server)
+                db.session.commit()
+                message = 13
+                category = 'success'
+            else:
+                message = 14
+                category = 'error'
+        else:
+            message = 3
+            category = 'error'
+    else:
+        message = 3
+        category = 'error'
+
+    return redirect(url_for('views.settings') + '?msg=' + str(message)+ '&category=' + category)
+
 @views.route('/manage', methods=['GET','POST'])
 @login_required
 def manage():
@@ -104,12 +164,16 @@ def manage():
                     messages= {1: 'Stop command send successfuly.',
                     2: 'Startup command send successfuly',
                     3: 'Error Contacting Server',
-                    4: 'Wrong Request'}
+                    4: 'Wrong Request',
+                    11: 'Gameserver added successfuly',
+                    12: 'Error creating gameserver',
+                    13: 'Gameserver removed successfuly',
+                    14: 'Error removing gameserver'}
 
                     flash(messages[int(request.args['msg'])], category=request.args['category'])
 
-                ips, ports, descs, statuses, dirs, lens, ids, schedules = getJavaServers(request.args['ip'])
-                return render_template("manage.html", dt = getCurrentDatetimeFormated(), ips = ips, ports = ports, descs = descs, statuses=statuses, dirs=dirs, lens=lens, schedules=schedules, ids=ids)
+                ips, ports, descs, statuses, dirs, lens, ids, is_local, schedules = getJavaServers(request.args['ip'])
+                return render_template("manage.html", dt = getCurrentDatetimeFormated(), ips = ips, ports = ports, descs = descs, statuses=statuses, dirs=dirs, lens=lens, schedules=schedules, ids=ids, managed=any(is_local))
             else:
                 return redirect(url_for('views.settings') + '?msg=6&category=error')
         else:
@@ -214,6 +278,44 @@ def turn_off():
 
     return redirect(url_for('views.settings') + '?msg=' + str(message)+ '&category=' + category)
     
+
+@views.route('/manage/add_unmanaged_gameserver', methods=['POST'])
+@login_required
+def add_unmanaged_gameserver():
+    updateInteractivity(current_user)
+    if current_user.is_privilleged:
+        if 'server_ip' in request.form and 'server_port' in request.form:
+            server = Server.query.filter_by(ip = request.form['server_ip']).first()
+            if server:
+                if not Game_server.query.filter_by(server_id = server.id).filter_by(port = request.form['server_port']).first():
+                    new_game_server = Game_server(server_id = server.id, port = request.form['server_port'], updated_at = None, include_schedule=False, status = None)
+                    db.session.add(new_game_server)
+                    db.session.commit()
+                    return redirect(request.referrer.split('&')[0] + '&msg=11&category=success')
+    else:
+        return redirect(url_for('views.settings'))
+
+    return redirect(request.referrer.split('&')[0] + '&msg=12&category=error')
+
+@views.route('/manage/remove_unmanaged_gameserver', methods=['POST'])
+@login_required
+def remove_unmanaged_gameserver():
+    updateInteractivity(current_user)
+    if current_user.is_privilleged:
+        if 'gameserver_ip' in request.form:
+            ip = request.form['gameserver_ip'].split(':')[0]
+            port = request.form['gameserver_ip'].split(':')[-1]
+            server = Server.query.filter_by(ip = ip).first()
+            if server and not server.is_local:
+                game_servers = Game_server.query.filter_by(server_id = server.id).filter_by(port = port).first()
+                if (game_servers):
+                    db.session.delete(game_servers)
+                    db.session.commit()
+                    return redirect(request.referrer.split('&')[0] + '&msg=13&category=success')
+    else:
+        return redirect(url_for('views.settings'))
+
+    return redirect(request.referrer.split('&')[0] + '&msg=14&category=error')
 
 @views.route('/settings/delete_user/<user_id>', methods=['POST'])
 @login_required
