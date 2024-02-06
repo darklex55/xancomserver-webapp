@@ -4,7 +4,7 @@ from flask_login import current_user
 from .models import User, db, Announcements, Server, Server_status, Game_server
 from sqlalchemy import desc
 from mcstatus import JavaServer
-from hashlib import sha256
+from hashlib import sha1, sha256
 
 import requests
 import os
@@ -29,14 +29,15 @@ def produceHashFromText(text):
     text = text.encode('UTF-8')
     return sha256(text).hexdigest()
 
-def getPortStatus():
+def getPortStatusSocket(server_ip = None):
     status = []
     desc = []
     mc_ver = []
     players = []
     details = []
+    ids = []
 
-    servers = Server.query.all()
+    servers = Server.query.filter_by(ip=server_ip).all() if server_ip else Server.query.all()
 
     for s in servers:
         if s.is_local:
@@ -49,13 +50,12 @@ def getPortStatus():
                     for port in ports:
                         server = JavaServer.lookup(s.ip+':'+str(port))
                         result = 1
-                        
+
                         try:
                             stats = server.status()
                             #desc.append(stats.description)
                             mc_ver.append(stats.version.name)
                             players.append(str(stats.players.online)+'/'+str(stats.players.max))
-
                             result = 0
                         except:
                             #desc.append('-')
@@ -64,12 +64,13 @@ def getPortStatus():
 
                             result = 1
 
+                        ids.append(sha1(bytes(str(s.public_ip) + '..' + str(port), encoding='utf-8')).hexdigest())
                         desc.append(res.get('answer')[0][i])
                         i+=1
                         status.append(result)
 
             except:
-                return [],0,[],[],0, getCurrentDatetimeFormated()
+                return [],[],0,[],[],0, getCurrentDatetimeFormated()
         else:
             server = JavaServer.lookup(s.public_ip)
             result = 1
@@ -91,17 +92,18 @@ def getPortStatus():
 
     updateInteractivity(current_user)
                 
-    return status, len(status), desc, mc_ver, players, getCurrentDatetimeFormated()
+    return ids, status, len(status), desc, mc_ver, players, getCurrentDatetimeFormated()
 
-def getAvailablePortsFormated():
+def getAvailablePortsFormated(server_ip=None):
     ip = []
     local_port = []
     port_status = []
     descs = []
     dirs = []
+    ids = []
     i=0
 
-    servers = Server.query.all()
+    servers = Server.query.filter_by(ip=server_ip).all() if server_ip else Server.query.all()
     
     for server in servers:
         if server.is_local:
@@ -109,7 +111,6 @@ def getAvailablePortsFormated():
                 res = requests.get('http://' + server.ip + '/getMCServers', timeout=2)
                 if res.status_code==200:
                     res = res.json()
-                    print(res.get('answer'))
                     for port in res.get('answer')[1]:
                         ip.append(server.public_ip)
                         local_port.append(port)
@@ -117,6 +118,7 @@ def getAvailablePortsFormated():
                         descs.append(res.get('answer')[0][i])
                         dirs.append(res.get('answer')[2][i])
                         i+=1
+                        ids.append(sha1(bytes(str(server.public_ip) + '..' + str(port), encoding='utf-8')).hexdigest())
             except:
                 continue
         else:
@@ -127,7 +129,7 @@ def getAvailablePortsFormated():
             dirs.append('-')
             i+=1
 
-    return ip, local_port, descs, port_status, dirs, len(port_status)
+    return ip, local_port, descs, port_status, dirs, len(port_status), ids
 
 def getSSHPortFormated():
     try:
@@ -246,8 +248,7 @@ def attempt_shutdown(ip):
     return attempt
 
 def getJavaServers(ip):
-    data = getAvailablePortsFormated()
-    print(data)
+    data = getAvailablePortsFormated(ip)
     schedules = []
 
     for i in range(len(data[0])):

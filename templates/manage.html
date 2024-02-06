@@ -3,27 +3,46 @@
 
 {% block sockets %}
 <script>
+    const manage_server_ip = (new URLSearchParams(window.location.search)).get('ip');
     socket.on('connect', function() {
-        socket.emit('ask port status', {data: 'gimme port pluiz'});
+        socket.emit('ask port status', {data: manage_server_ip});
     });
 
     socket.on('get port status', function(data) {
-        console.log(data);
-        for (var i=0;i<data[1];i++){
-            if (data[0][i]==0){
-            document.getElementById('port_'+i).innerHTML = 'Online'
-            document.getElementById('port_'+i).className = "badge badge-success"
-            document.getElementById('action_'+i).innerHTML = '<form action="/manage/shutoff?name='+ document.getElementById('ip_name_'+i).innerHTML +'" method="POST"><button type="submit" class="close" id="refresh_ports" name="ip" onSubmit="return confirm(\'Are you sure you wish to stop the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Stop</span></button></form>'
+        document.getElementById('refresh_ports').disabled = false;
+        document.getElementById('refresh_ports_icon').className = 'fa fa-refresh';
+
+        data = JSON.parse(data);
+        
+        var row;
+        for (var i=0; i<data['ids'].length; i++){
+            row = document.getElementById(data['ids'][i]);
+            try{
+                if (data['status'][i]==0){
+                    row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-success">Online</span>'
+                    row.querySelector('#action').innerHTML = '<form action="/manage/shutoff?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_off_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to stop the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Stop</span></button></form>'
+                }
+                else{
+                    row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-danger">Offline</span>'
+                    row.querySelector('#action').innerHTML = '<form action="/manage/turnon?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_on_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to start the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Start</span></button></form>'
+                }
             }
-            else{
-            document.getElementById('port_'+i).innerHTML = 'Offline'
-            document.getElementById('port_'+i).className = "badge badge-danger"
-            document.getElementById('action_'+i).innerHTML = '<form action="/manage/turnon?name='+ document.getElementById('ip_name_'+i).innerHTML +'" method="POST"><button type="submit" class="close" id="refresh_ports" name="ip" onSubmit="return confirm(\'Are you sure you wish to start the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Start</span></button></form>'
+            catch(e){
+                console.warn('Unable to update server with id ' + data['ids'][i]);
+                continue
             }
         }
-        document.getElementById('nav_date').innerHTML = 'Last update: ' + data[5]
+
+        document.getElementById('nav_date').innerHTML = 'Last update: ' + data['date_now']
     });
+
+    function refreshPorts(){
+        document.getElementById('refresh_ports').disabled = true;
+        document.getElementById('refresh_ports_icon').className = 'fa fa-spinner fa-spin';
+        socket.emit('ask port status', {data: manage_server_ip});
+    }
 </script>
+
 {% endblock %}
 
 {% block body %}
@@ -82,7 +101,7 @@
     <div class="body-main-list" style="min-width: 20%;">
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
             <h4 style="padding-top: 10px" id="manage_server_name">Servers for </h4>
-            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refresh()"><i class="fa fa-refresh" style="align-self: center"></i></button>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()"><i class="fa fa-refresh" id="refresh_ports_icon" style="align-self: center"></i></button>
         </div>
         <table class="table"> 
             <thread style="padding-bottom: 10px">
@@ -98,28 +117,28 @@
 
             {%for i in range(0, lens)%}
                 
-            <tr>
+            <tr id="{{ids[i]}}">
                 <th scope="row">{{i+1}}</th>
-                <td>{{ports[i]}}</td>
-                <td>
+                <td id="server_port">{{ports[i]}}</td>
+                <td id="server_status">
                 {% if statuses[i]==0 %}
-                    <span id="port_{{i}}" class="badge badge-success">Online</span>
+                    <span id="port" class="badge badge-success">Online</span>
                 {% else %}
-                    <span id="port_{{i}}" class="badge badge-danger">Offline</span>
+                    <span id="port" class="badge badge-danger">Offline</span>
                 {% endif %}
-                <td id="ip_name_{{i}}">{{dirs[i]}}</td>
+                <td id="ip_name">{{dirs[i]}}</td>
                 <td style="text-align: center;">
                     {% if schedules[i]==-1 %}
                     <button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px" disabled>On</button>
                     {% endif %}
                     {% if schedules[i]==0 %}
-                    <form id="schedule_action_{{i}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
+                    <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
                     {% endif %}
                     {% if schedules[i]==1 %}
-                    <form id="schedule_action_{{i}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
+                    <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
                     {% endif %}
                 </td>
-                <td id="action_{{i}}"></td>
+                <td id="action"></td>
                 </td>
              </tr>
              

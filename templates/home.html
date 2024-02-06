@@ -7,7 +7,6 @@
 
 <script>
     socket.on('recieve_announcements', function(data){
-            console.log(data);
             var html = '';
             
             for (var i=0;i<data[5];i++){
@@ -21,7 +20,6 @@
 
 <script>
     socket.on('recieve_announcements', function(data){
-        console.log(data);
         var html = '';
         
         for (var i=0;i<data[5];i++){
@@ -34,31 +32,41 @@
 {% endif %}
 <script>
     socket.on('connect', function() {
-        socket.emit('ask port status', {data: 'gimme port pluiz'});
+        socket.emit('ask port status', {});
         socket.emit('get_announcements', {data: 'gimme announcements pluizz'});
     });
 
     socket.on('get port status', function(data) {
-        console.log(data);
-        for (var i=0;i<data[1];i++){
-            if (data[0][i]==0){
-            document.getElementById('port_'+i).innerHTML = '<span id="action_'+i+'">Online</span>'
-            document.getElementById('port_'+i).className = "badge badge-success"
+        document.getElementById('refresh_ports').disabled = false;
+        document.getElementById('refresh_ports_icon').className = 'fa fa-refresh';
+
+        data = JSON.parse(data);
+
+        var row;
+        for (var i=0; i<data['ids'].length; i++){
+            row = document.getElementById(data['ids'][i]);
+            try{
+                if (data['status'][i]==0){
+                    row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-success">Online</span>'
+                }
+                else{
+                    row.querySelector('#server_status').innerHTML = '<form action="/request_turnon?server_port=' + row.querySelector('#server_port').innerHTML +'" method="POST"><span id="port" class="badge badge-danger"><input type="submit" value="&crarr;" style="height:60%;font-size:8px"></input>Offline</span></form>'
+                    row.querySelector('#ip_players').innerHTML = '-';
+                }
             }
-            else{
-            document.getElementById('port_'+i).innerHTML = 'Offline'
-            document.getElementById('port_'+i).className = "badge badge-danger"
-            document.getElementById('action_'+i).innerHTML = '<form action="/request_turnon?server_port=' + document.getElementById('server_port_'+i).innerHTML +'" method="POST"><span id="port_{{i}}" class="badge badge-danger"><input type="submit" value="&crarr;" style="height:60%;font-size:8px"></input>Offline</span></form>'
+            catch(e){
+                console.warn('Unable to update server with id ' + data['ids'][i]);
+                continue
             }
-            //document.getElementById('ip_name_'+i).innerHTML = data[2][i]
-            document.getElementById('ip_version_'+i).innerHTML = data[3][i]
-            document.getElementById('ip_players_'+i).innerHTML = data[4][i]
         }
-        document.getElementById('nav_date').innerHTML = 'Last update: ' + data[5]
+
+        document.getElementById('nav_date').innerHTML = 'Last update: ' + data['date_now']
     });
 
     function refreshPorts(){
-        socket.emit('ask port status', {data: 'gimme port pluiz'});
+        document.getElementById('refresh_ports').disabled = true;
+        document.getElementById('refresh_ports_icon').className = 'fa fa-spinner fa-spin';
+        socket.emit('ask port status', {});
     }
 
 </script>
@@ -121,7 +129,7 @@
     <div class="body-main-list">
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
             <h4 style="padding-top: 10px">Available IPs</h4>
-            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()"><i class="fa fa-refresh" style="align-self: center"></i></button>
+            <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()"><i class="fa fa-refresh" id="refresh_ports_icon" style="align-self: center"></i></button>
         </div>
         <table class="table"> 
             <thread style="padding-bottom: 10px">
@@ -138,19 +146,19 @@
         
             {%for i in range(0, ports_len)%}
                 
-                <tr>
+                <tr id="{{ids[i]}}">
                     <th scope="row">{{i+1}}</th>
-                    <td id="server_ip_{{i}}">{{ips[i]}} </td>
-                    <td id="server_port_{{i}}">{{local_ports[i]}}</td>
-                    <td>
+                    <td id="server_ip">{{ips[i]}} </td>
+                    <td id="server_port">{{local_ports[i]}}</td>
+                    <td id="server_status">
                     {% if ports_status[i]==0 %}
-                        <span id="port_{{i}}" class="badge badge-success">Online</span>
+                        <span id="port" class="badge badge-success">Online</span>
                     {% else %}
-                        <span id="action_{{i}}"><span id="port_{{i}}" class="badge badge-danger">Offline</span></span>
+                        <span id="action"><span id="port" class="badge badge-danger">Offline</span></span>
                     {% endif %}
-                    <td id="ip_name_{{i}}">{{descs[i]}}</td>
-                    <td id="ip_version_{{i}}"></td>
-                    <td id="ip_players_{{i}}">-</td>
+                    <td id="ip_name">{{descs[i]}}</td>
+                    <td id="ip_version"></td>
+                    <td id="ip_players">-</td>
                     </td>
                  </tr>
             {%endfor%}

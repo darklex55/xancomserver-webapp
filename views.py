@@ -16,15 +16,9 @@ def home():
     if current_user.uuid == '8667ba71b85a4004af54457a9734eed7':
         flash('Buy minecraft you filthy pirate.', category='error')
     updateInteractivity(current_user)
-    ips, local_ports, descs, ports_status, dirs, ports_len = getAvailablePortsFormated()
+    ips, local_ports, descs, ports_status, dirs, ports_len, ids = getAvailablePortsFormated()
     usernames, uuids, userdates, __, __, userdata_len = getAllUserData()
-    return render_template("home.html", dt = getCurrentDatetimeFormated(), ips=ips, local_ports = local_ports, descs=descs, ports_status = ports_status, ports_len = ports_len, usernames = usernames, userdates = userdates, uuids=uuids, userdata_len = userdata_len), 200
-
-@views.route('/print_my_ip', methods=['GET'])
-def print_my_ip():
-    print(request.remote_addr)
-    return redirect(url_for('views.home'))
-
+    return render_template("home.html", dt = getCurrentDatetimeFormated(), ips=ips, local_ports = local_ports, descs=descs, ports_status = ports_status, ports_len = ports_len, usernames = usernames, userdates = userdates, uuids=uuids, userdata_len = userdata_len, ids=ids), 200
 
 @views.route('/settings', methods=['GET', 'POST'])
 @login_required
@@ -62,7 +56,6 @@ def user_management():
             user = User.query.filter_by(email=request.form.get('email')).first()
             if (user):
                 u_mail = user.email
-                print(u_mail)
                 db.session.delete(user)
                 db.session.commit()
                 flash('User deleted successfuly', category='success')
@@ -115,8 +108,8 @@ def manage():
 
                     flash(messages[int(request.args['msg'])], category=request.args['category'])
 
-                ips, ports, descs, statuses, dirs, lens, schedules = getJavaServers(request.args['ip'])
-                return render_template("manage.html", dt = getCurrentDatetimeFormated(), ips = ips, ports = ports, descs = descs, statuses=statuses, dirs=dirs, lens=lens, schedules=schedules)
+                ips, ports, descs, statuses, dirs, lens, ids, schedules = getJavaServers(request.args['ip'])
+                return render_template("manage.html", dt = getCurrentDatetimeFormated(), ips = ips, ports = ports, descs = descs, statuses=statuses, dirs=dirs, lens=lens, schedules=schedules, ids=ids)
             else:
                 return redirect(url_for('views.settings') + '?msg=6&category=error')
         else:
@@ -128,19 +121,15 @@ def manage():
 @login_required
 def request_turnon():
     updateInteractivity(current_user)
-    if 'server_port' in request.args:
-        print('1')
+    if 'server_port' in request.args and 'server_ip' in request.args:
         try:
-            print('2')
-            res = requests.get('http://' + SERVER_IP + '/getMCServers', timeout=2)
+            res = requests.get('http://' + request.args['server_ip'] + '/getMCServers', timeout=2)
             if res.status_code==200:
-                print('3')
                 res = res.json()
                 ports = res.get('answer')[1]
                 if request.args['server_port'] in ports:
                     try:
-                        print(res.get('answer')[2][ports.index(request.args['server_port'])])
-                        requests.get('http://'+SERVER_IP+'/run_mc_server?name='+res.get('answer')[2][ports.index(request.args['server_port'])], timeout=1)
+                        requests.get('http://'+ request.args['server_ip'] +'/run_mc_server?name='+res.get('answer')[2][ports.index(request.args['server_port'])], timeout=1)
                         flash('Server Start Request Submitted', 'success')
                         return redirect(url_for('views.home'))
                     except:
@@ -174,9 +163,9 @@ def schedule_toggle():
 def manage_shutoff():
     updateInteractivity(current_user)
     if current_user.is_privilleged:
-        if 'name' in request.args:
+        if 'name' in request.args and 'server_ip' in request.args:
             try:
-                requests.get('http://'+SERVER_IP+'/shutoff_mc_server?name='+request.args['name'], timeout=1)
+                requests.get('http://'+request.args['server_ip']+'/shutoff_mc_server?name='+request.args['name'], timeout=1)
                 return redirect(request.referrer.split('&')[0]+'&msg=1&category=success')
             except:
                 return redirect(request.referrer.split('&')[0]+'&msg=3&category=error')
@@ -190,9 +179,9 @@ def manage_shutoff():
 def manage_turnon():
     updateInteractivity(current_user)
     if current_user.is_privilleged:
-        if 'name' in request.args:
+        if 'name' in request.args and 'server_ip' in request.args:
             try:
-                requests.get('http://'+SERVER_IP+'/run_mc_server?name='+request.args['name'], timeout=1)
+                requests.get('http://'+request.args['server_ip']+'/run_mc_server?name='+request.args['name'], timeout=1)
                 return redirect(request.referrer.split('&')[0]+'&msg=2&category=success')
             except:
                 return redirect(request.referrer.split('&')[0]+'&msg=3&category=error')

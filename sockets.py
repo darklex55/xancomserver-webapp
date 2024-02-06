@@ -1,15 +1,18 @@
 from flask_socketio import emit
 import socketio
-from .python_utils import getPortStatus, getAnnouncemnts
+from .python_utils import getPortStatusSocket, getAnnouncemnts
 from .models import db, Announcements
 from flask_login import current_user
+import json
 from datetime import datetime
 
 def run_sockets(socketio):
     @socketio.on('ask port status')
     def handle_message(data):
-        status, status_len, desc, mc_ver, players, date_now = getPortStatus()
-        emit('get port status', [status, status_len, desc, mc_ver, players, date_now])
+        server_ip = data.get('data', None)
+        ids, status, status_len, desc, mc_ver, players, date_now = getPortStatusSocket(server_ip)
+        emit('get port status', json.dumps({"ids": ids, "status": status, "status_len": status_len, 
+                                        "desc": desc, "mc_ver": mc_ver, "players": players, "date_now": date_now}))
 
     @socketio.on('get_announcements')
     def handle_saved_announcements(data):

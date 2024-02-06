@@ -42,10 +42,6 @@
 
                 return replacedText;
             }
-                        
-            function refresh(){
-              socket.emit('ask port status', {data: 'gimme port pluiz'});
-            }
 
             function make_announcement(){
               var a_text = document.getElementById("announcement_text").value
