@@ -36,11 +36,13 @@ def create_app():
     app.register_blueprint(views, url_prefix='/')
     app.register_blueprint(auth, url_prefix='/')
 
-    from .models import User, Server, Game_server
-
-    app = create_database(app)
+    from .models import User, Announcements, Server, Server_status, Game_server, WOL_logs
 
     with app.app_context():
+        if not path.exists('instance/' + DB_NAME):
+            db.create_all()
+            print('Created Database')
+
         if (not Server.query.filter_by(ip=SERVER_IP).first()):
             new_server = Server(ip=SERVER_IP, public_ip=OFFICIAL_DOMAIN, current_status='Offline', mac='08:60:6e:f0:49:9b', is_local=True)
             db.session.add(new_server)
@@ -150,13 +152,5 @@ def create_app():
     scheduler.init_app(app)
     scheduler.start()
 
-
-    return app
-
-def create_database(app):
-    if not path.exists('website/' + DB_NAME):
-        with app.app_context():
-            db.create_all()
-            print('Created Database')
 
     return app
