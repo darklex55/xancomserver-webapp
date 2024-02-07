@@ -185,8 +185,8 @@ def manage():
 @login_required
 def request_turnon():
     updateInteractivity(current_user)
-    if 'server_port' in request.args and 'server_ip' in request.args:
-        server = Server.query.filter_by(public_ip = request.args['server_ip']).first()
+    if 'server_port' in request.args and 'server_ip' in request.form:
+        server = Server.query.filter_by(public_ip = request.form['server_ip']).first()
         if server:
             try:
                 res = requests.get('http://' + server.ip + '/getMCServers', timeout=2)
