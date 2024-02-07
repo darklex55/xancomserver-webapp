@@ -54,7 +54,7 @@
                 }
                 else{
                     if (data['is_local'][i]){
-                        row.querySelector('#server_status').innerHTML = '<form action="/request_turnon?server_port=' + row.querySelector('#server_port').innerHTML +'" method="POST"><span id="port" class="badge badge-danger"><input type="submit" value="'+row.querySelector('#server_ip').innerHTML+'" style="height:60%;font-size:8px"></input>Offline</span></form>'
+                        row.querySelector('#server_status').innerHTML = '<form action="/request_turnon?server_port=' + row.querySelector('#server_port').innerHTML +'" method="POST"><span id="port" class="badge badge-danger"><input type="hidden" name="server_ip" value="'+row.querySelector('#server_ip').innerHTML+'"><input type="submit" value="&crarr;" style="height:60%;font-size:8px"></input>Offline</span></form>'
                     }
                     else{
                         row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-danger">Offline</span>'
