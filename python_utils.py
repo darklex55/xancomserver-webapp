@@ -303,7 +303,7 @@ def toggleGameServerSchedule(ip, port):
     return False
 
 def generateNewSSHKeyRebel():
-    server = Server.query.first()
+    server = Server.query.filter_by(ip=SERVER_IP).first()
 
     if server:
         try:
