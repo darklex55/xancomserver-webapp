@@ -6,7 +6,7 @@ from flask_apscheduler import APScheduler
 import requests
 import json
 from os import path
-from datetime import datetime
+from datetime import datetime, timedelta
 from mcstatus import JavaServer
 
 db = SQLAlchemy()
@@ -51,6 +51,8 @@ def create_app():
     login_manager = LoginManager()
     login_manager.login_view = 'auth.login'
     login_manager.init_app(app)
+
+    app.config['REMEMBER_COOKIE_DURATION'] = timedelta(days=1)
 
     @login_manager.user_loader
     def load_user(id):

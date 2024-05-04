@@ -26,12 +26,26 @@ def settings():
     updateInteractivity(current_user)
     ssh_ip = getSSHPortFormated()
     session.clear()
+    session['mfa_type'] = 'M'
+
+    user = User.query.filter_by(id=current_user.id).first()
+    if user:
+        session['mfa_type'] = user.mfa_type
+
     if request.method=='POST':
-        db.session.delete(current_user)
-        db.session.commit()
-        flash('User deleted successfuly', category='success')
-        logout_user()
-        return redirect(url_for('auth.login'))
+        if request.form.get('delete_user') and request.form.get('delete_user') == 'on':
+            db.session.delete(current_user)
+            db.session.commit()
+            flash('User deleted successfuly', category='success')
+            logout_user()
+            return redirect(url_for('auth.login'))
+        elif request.form.get('remove_mfa_app') and request.form.get('remove_mfa_app') == 'on':
+            user = User.query.filter_by(id = current_user.id).first()
+            if user:
+                user.mfa_type = 'M'
+                db.session.commit()
+                flash('Authenticator app removed from account')
+                session['mfa_type'] = 'M'
 
     if 'msg' in request.args and 'category' in request.args:
         messages = {1: "WoL Package sent. Please refresh the page in a while to confirm the server's status.",
@@ -49,7 +63,7 @@ def settings():
         flash(messages.get(int(request.args['msg'])), category=request.args['category'])
 
 
-    return render_template("settings.html", dt = getCurrentDatetimeFormated(), ssh_ip = ssh_ip, servers = getServers())
+    return render_template("settings.html", dt = getCurrentDatetimeFormated(), ssh_ip = ssh_ip, servers = getServers(), mfa_type=session['mfa_type'])
 
 @views.route('/user_management', methods=['GET', 'POST'])
 @login_required

@@ -5,6 +5,11 @@ from .models import User, db, Announcements, Server, Server_status, Game_server
 from sqlalchemy import desc
 from mcstatus import JavaServer
 from hashlib import sha1, sha256
+from pyotp import totp, random_base32
+from base64 import b64encode
+from io import BytesIO
+import qrcode
+
 
 import requests
 import os
@@ -28,6 +33,31 @@ def getDatetimeFormatedNoSeconds(dt):
 def produceHashFromText(text):
     text = text.encode('UTF-8')
     return sha256(text).hexdigest()
+
+def getOTPKeyFromSecret(secret):
+    return ''.join([k.capitalize() for k in sha256(secret.encode('UTF-8')).hexdigest()])[:32].replace('9','A').replace('8','B').replace('0','C').replace('1','D')
+
+def getOTPObjectFromUserAttributes(user_email, user_created_on):
+    return totp.TOTP(getOTPKeyFromSecret(user_email + user_created_on.strftime("%m%d%Y%H%M%S")))
+
+def getOTPObjectFromUserId(user_id):
+    user = User.query.filter_by(id = user_id).first()
+
+    if not user:
+        return False
+    
+    secret = user.email + user.created_on.strftime("%m%d%Y%H%M%S")
+
+    return totp.TOTP(getOTPKeyFromSecret(secret))
+
+def get_b64encoded_qr_image(data):
+    qr = qrcode.QRCode(version=1, box_size=10, border=5)
+    qr.add_data(data)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color='black', back_color='white')
+    buffered = BytesIO()
+    img.save(buffered)
+    return b64encode(buffered.getvalue()).decode("utf-8")
 
 def getPortStatusSocket(server_ip = None):
     status = []
@@ -317,3 +347,6 @@ def generateNewSSHKeyRebel():
             pass
 
     return '-1'
+
+def generateRandomEmailOTP():
+    return random_base32()[:8]

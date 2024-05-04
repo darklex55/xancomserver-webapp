@@ -52,9 +52,12 @@
     {% endwith %}
 
     <div style="padding: 15%;">
-        <form method="POST" style="padding: 2%" class="body-main-list">
+        {% if state >= 0 %}
+            <form method="POST" id="go_back_form" style="position: absolute;"><input type="checkbox" id="one_step_back" name="one_step_back" checked hidden><button style="border: 0; background-color: transparent; font-size: xx-small; color:blue" type="submit">&#8592; Go back</button></form>
+        {% endif %}
+        <form method="POST" style="padding: 2%" class="body-main-list" id="main">
         <h3 align="center">Sign Up</h3>
-        {% if boolean %}
+        {% if state == 1 %}
 
         <div class="form-group">
             <label for="e_mail">Email</label>
@@ -89,6 +92,78 @@
         </div>
         <br />
         <button type="submit" class="btn btn-primary">Submit</button>
+
+        {% elif state == 2 %}
+
+        <div class="form-group" align="center">
+            <p>Select a 2-Factor authentication option (required): </p>
+        </div>
+
+        <div class="form-group" align="center">
+            <a onclick="selectEmail()">
+                <input
+                type="checkbox"
+                id="getotpmail"
+                name="getotpmail"
+                readonly
+                checked
+                />
+                <i class="fa fa-envelope"></i>
+                <label for="getotpmail">Get One-Time-Passwords through e-mail</label>
+            </a>
+        </div>
+        <div class="form-group" align="center">
+            <a onclick="selectApp()">
+                <input
+                type="checkbox"
+                id="getotpapp"
+                name="getotpapp"
+                />
+                <i class="fa fa-mobile-phone"></i>
+                <label for="getotpapp">Use an authenticator app (e.g. Google Authenticator)</label>
+            </a>
+        </div>
+
+        <script>
+            function selectEmail(){
+                document.getElementById('getotpmail').checked = true;
+                document.getElementById('getotpapp').checked = false;
+            }
+
+            function selectApp(){
+                document.getElementById('getotpmail').checked = false;
+                document.getElementById('getotpapp').checked = true;
+            }
+
+        </script>
+
+        <br />
+        <button type="submit" class="btn btn-primary">Continue</button>
+
+        {% elif state == 3 %}
+
+        <div class="form-group" align="center">
+            <p style="font-size: large;">Setup the authenticator app by following the steps bellow: </p>
+            <p><b>1)</b> Scan the code using an authenticator app (e.g. Google Authenticator)<br><b>2)</b> Enter the code shown on the Authenticator app bellow and validate</p>
+        </div>
+
+        <div class="form-group" align="center">
+            <img src="data:image/png;base64, {{otp_setup_img}}" alt="Secret Token" style="width:200px;height:200px" />
+        </div>
+        <div class="form-group" align="center">
+            <label for="otp_code">Code</label>
+            <input
+            type="text"
+            id="otp_code"
+            name="otp_code"
+            pattern="[0-9]{6}"
+            autocomplete="off"
+            required
+            />
+        </div>
+
+        <br />
+        <button type="submit" class="btn btn-primary">Validate</button>
 
         {% else %}
 
