@@ -78,9 +78,37 @@
             <p>Username: </p><p>{{current_user.username}}</p>
         </div>
         <div style="display: flex; flex-direction: row; justify-content: space-around;">
-            <form method="POST" style="padding: 2%" class="body-main-list" onSubmit="return confirm('Are you sure you wish to delete?');">
+            <form method="POST" style="padding: 2%" id ='delete_user' class="body-main-list" onSubmit="return confirm('Are you sure you wish to delete?');">
+                <input
+                type="checkbox"
+                id="delete_user"
+                name="delete_user"
+                checked
+                hidden
+                />
                 <button type="submit" class="btn btn-danger">Delete User</button>
             </form>
+
+            {% if mfa_type == 'A' %}
+            
+            <form method="POST" style="padding: 2%" id ='remove_mfa_app' class="body-main-list" onSubmit="return confirm('Are you sure you wish to remove the MFA option?');">
+                <input
+                type="checkbox"
+                id="remove_mfa_app"
+                name="remove_mfa_app"
+                checked
+                hidden
+                />
+                <button type="submit" class="btn btn-danger">Remove Authenticator</button>
+            </form>
+
+            {% else %}
+
+            <form action="/add_mfa" style="padding: 2%" id ='add_mfa_app'>
+                <button type="submit" class="btn btn-primary">Add Authenticator</button>
+            </form>
+
+            {% endif %}
         </div>
 
     </div>

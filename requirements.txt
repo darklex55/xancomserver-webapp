@@ -8,3 +8,5 @@ Flask-SQLAlchemy<=3.1.1
 mcstatus<=11.1.1
 SQLAlchemy<=2.0.25
 requests<=2.31.0
+pyotp<=2.9.0
+qrcode<=7.4.2

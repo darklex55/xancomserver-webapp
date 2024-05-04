@@ -51,6 +51,8 @@
         {% endif %} 
     {% endwith %}
 
+    {% if not passwordCheckPass %}
+
     <div style="padding: 15%;">
         <form method="POST" style="padding: 2%" class="body-main-list">
         <h3 align="center">Login</h3>
@@ -80,6 +82,48 @@
         </form>
         
     </div>
+
+    {% else %}
+
+    <div style="padding: 15%;">
+        <form method="POST" id="go_back_form" style="position: absolute;"><input type="checkbox" id="one_step_back" name="one_step_back" checked hidden><button style="border: 0; background-color: transparent; font-size: xx-small; color:blue" type="submit">&#8592; Go back</button></form>
+        <form method="POST" style="padding: 2%" class="body-main-list" id="otp_form">
+        <h3 align="center">2-Factor Authentication</h3>
+
+        {% if mfa_type == 'A' %}
+        <p align="center">Enter the code from your authenticator app</p>
+        {% else %}
+        <p align="center">Enter the code you received on your e-mail</p>
+        {% endif %}
+
+        <div class="form-group" align="center">
+            <label for="userName">OTP Code</label>
+            {% if mfa_type == 'A' %}
+            <input
+            type="text"
+            id="otp_code"
+            name="otp_code"
+            pattern="[0-9]{6}"
+            autocomplete="off"
+            required
+            />
+            {% else %}
+            <input
+            type="text"
+            id="otp_code"
+            name="otp_code"
+            autocomplete="off"
+            required
+            />
+            {% endif %}
+        </div>
+        <br />
+        <button type="submit" class="btn btn-primary">Verify</button>
+        </form>
+        
+    </div>
+
+    {% endif %}
 
     
 {% endblock %}

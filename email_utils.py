@@ -32,6 +32,20 @@ def sendPasswordResetEmail(email, auth_key, url_root):
     smtp.sendmail(SMTP_FROM,email,msg.as_string())
     smtp.quit()
 
+def sendOTPEmail(email, auth_key):
+    msg = MIMEMultipart()
+    msg['Subject'] = 'Xancomserver One-Time-Password'
+    msg['From'] = SMTP_FROM
+    text = 'You have attempted a new login. Use the following OTP to login: ' + auth_key
+    msg.attach(MIMEText(text,'plain'))
+    smtp = smtplib.SMTP('smtp.gmail.com:587')
+    smtp.ehlo()
+    smtp.starttls()
+    smtp.ehlo()
+    smtp.login(SMTP_LOGIN,SMTP_PASSWORD)
+    smtp.sendmail(SMTP_FROM,email,msg.as_string())
+    smtp.quit()
+
 def sendPrivateKey(email, private_key):
     msg = MIMEMultipart()
     msg['Subject'] = 'Xancomserver Account Password Reset'

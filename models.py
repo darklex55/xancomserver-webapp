@@ -12,6 +12,8 @@ class User(db.Model, UserMixin):
     mail_auth_key = db.Column(db.String(64))
     is_authed = db.Column(db.Boolean, default=False)
     is_privilleged = db.Column(db.Boolean, default=False)
+    created_on = db.Column(db.DateTime(timezone=True))
+    mfa_type = db.Column(db.String(8), default='M')
 
 class Announcements(db.Model):
     id = db.Column(db.Integer, primary_key=True)
