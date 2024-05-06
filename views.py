@@ -208,7 +208,6 @@ def manage():
 @login_required
 def request_turnon():
     updateInteractivity(current_user)
-    print(request.form.get('correlation_id'))
     if request.form.get('correlation_id'):
         game_server = Game_server.query.filter_by(correlation_id = request.form.get('correlation_id')).first()
         if game_server:
@@ -217,6 +216,7 @@ def request_turnon():
                 try:
                     updated_gameservers = getAvailablePortsFormated(server.ip)
                     for gs in updated_gameservers:
+                        print("I'm here!")
                         if gs['id'] == game_server.correlation_id:
                             try:
                                 requests.get('http://'+ server.ip +'/run_mc_server?name='+game_server.dir, timeout=1)
