@@ -217,8 +217,10 @@ def request_turnon():
                     updated_gameservers = getAvailablePortsFormated(server.ip)
                     for gs in updated_gameservers:
                         print("I'm here!")
+                        print(gs['id'] + ' vs ' + game_server.correlation_id)
                         if gs['id'] == game_server.correlation_id:
                             try:
+                                print('http://'+ server.ip +'/run_mc_server?name='+game_server.dir)
                                 requests.get('http://'+ server.ip +'/run_mc_server?name='+game_server.dir, timeout=1)
                                 flash('Server Start Request Submitted', 'success')
                             except:
