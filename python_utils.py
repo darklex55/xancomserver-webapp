@@ -113,7 +113,7 @@ def getUpdateLocalServerPorts(server, getMcStatus=False):
                 db.session.commit()
 
                 gameservers_dict['is_local'] = True
-                gameservers_dict['ip'] = server.ip
+                gameservers_dict['ip'] = server.public_ip
                 gameservers_dict['local_port'] = server_info['port']
                 gameservers_dict['port_status'] = mcstatus
                 gameservers_dict['desc'] = server_info['name']
