@@ -164,10 +164,10 @@
                     <button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px" disabled>On</button>
                     {% endif %}
                     {% if servers[i]['schedule']==0 and managed %}
-                    <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
+                    <form id="schedule_action_{{servers[i]['id']}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
                     {% endif %}
                     {% if servers[i]['schedule']==1 and managed %}
-                    <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
+                    <form id="schedule_action_{{servers[i]['id']}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
                     {% endif %}
                 </td>
                 <td id="action" style="display: flex; flex-direction: row;"></td>

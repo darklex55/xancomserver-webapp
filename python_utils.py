@@ -81,6 +81,7 @@ def getUpdateLocalServerPorts(server, getMcStatus=False):
         res = requests.get('http://' + server.ip + '/getMCServers', timeout=2)
         if res.status_code==200:
             res = res.json()
+            print(res)
             for server_info in res.get('answer'):
                 gameservers_dict = {}
                 gameserver = Game_server.query.filter_by(server_id = server.id).filter_by(port = server_info['port']).first()
