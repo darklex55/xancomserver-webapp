@@ -81,23 +81,23 @@
                 }
             </script>
         
-            {%for i in range(0, user_obj[-1])%}
+            {%for user in user_data%}
                 
                 <tr>
-                    <th scope="row">{{i+1}}</th>
-                    <td>{{user_obj[0][i]}} </td>
-                    <td>{{user_obj[1][i]}}</td>
+                    <th scope="row">{{user['order_id']}}</th>
+                    <td>{{user['username']}} </td>
+                    <td>{{user['uuid']}}</td>
                     <td style="text-align: center;">
-                    {% if user_obj[2][i]==1 %}
+                    {% if user['last_login']==1 %}
                         <span class="badge badge-success">Yes</span>
                     {% else %}
                         <span class="badge badge-danger">No</span>
                     {% endif %}
-                    <td>{{user_obj[3][i]}}</td>
+                    <td>{{user['email']}}</td>
                     <td style="text-align: center;">
                         <form method="POST" style="padding: 2%; max-width: 60%; max-height: 60%; align-items: center; text-align: center;" class="body-main-list">
-                            <input type="hidden" id="email_{{i}}" name="email" value="{{user_obj[1][i]}}"></input>
-                            <button type="submit" class="btn btn-light" id="delete_user_submit_{{i}}"><i class="fa fa-trash" style="align-self: center; color: darkred" ></i></button>
+                            <input type="hidden" id="email_{{user['order_id']}}" name="email" value="{{user['uuid']}}"></input>
+                            <button type="submit" class="btn btn-light" id="delete_user_submit_{{user['order_id']}}"><i class="fa fa-trash" style="align-self: center; color: darkred" ></i></button>
                         </form>
                     </td>
                     </td>

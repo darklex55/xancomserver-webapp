@@ -1,6 +1,6 @@
 from flask_socketio import emit
 import socketio
-from .python_utils import getPortStatusSocket, getAnnouncemnts
+from .python_utils import getUpdatePortStatusSocket, getAnnouncemnts, getCurrentDatetimeFormated
 from .models import db, Announcements
 from flask_login import current_user
 import json
@@ -9,10 +9,9 @@ from datetime import datetime
 def run_sockets(socketio):
     @socketio.on('ask port status')
     def handle_message(data):
-        server_ip = data.get('data', None)
-        ids, status, status_len, desc, mc_ver, players, is_local, date_now = getPortStatusSocket(server_ip)
-        emit('get port status', json.dumps({"ids": ids, "status": status, "status_len": status_len, 
-                                        "desc": desc, "mc_ver": mc_ver, "players": players, "date_now": date_now, "is_local": is_local}))
+        port_ids = data.get('port_ids', None)
+        print(data)
+        emit('get port status', json.dumps({"gameservers": getUpdatePortStatusSocket(port_ids), "date_now": getCurrentDatetimeFormated()}))
 
     @socketio.on('get_announcements')
     def handle_saved_announcements(data):
