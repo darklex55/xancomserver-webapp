@@ -35,7 +35,7 @@
                     row.querySelector('#action').innerHTML = '<form action="/manage/remove_unmanaged_gameserver" method="POST"><button type="submit" class="close" id="refresh_ports" name="gameserver_ip" value="'+manage_server_ip+':'+row.querySelector('#server_port').innerHTML+'"><span aria-hidden="true" style="font-size: 12px;margin: auto; color: brown">Delete</span></button></form><button class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px; margin-left:8px" onClick="openInfoEditPopup(\''+data['gameservers'][i]['id']+'\')">Edit info</button>'
                 }
                 else{
-                    row.querySelector('#action').innerHTML = '<button class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px; margin-left:8px" onClick="openInfoEditPopup(\''+data['gameservers'][i]['id']+'\')">Edit info</button>';
+                    row.querySelector('#action').innerHTML += '<button class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px; margin-left:8px" onClick="openInfoEditPopup(\''+data['gameservers'][i]['id']+'\')">Edit info</button>';
                 }
             }
             catch(e){
