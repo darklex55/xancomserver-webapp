@@ -9,8 +9,8 @@
     socket.on('recieve_announcements', function(data){
             var html = '';
             
-            for (var i=0;i<data[5];i++){
-            html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://mineskin.eu/avatar/'+data[1][i]+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[0][i] +'</p></div><p style="font-size: small; align-self: center; margin-bottom: 0; padding-bottom: 0">'+ data[2][i] +'</p><a style="color: red" href="/delete_announcement?announcement_id=' + data[4][i] + '"><p style="font-size: 12px; color=red; margin:0; padding:0; flex:.5">Delete</p></a></div><p style="margin-left:10px">'+ linkify(data[3][i]) +'</p></div><hr>';
+            for (var i=0;i<data.length;i++){
+            html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://mineskin.eu/avatar/'+data[i]['uuid']+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[i]['username'] +'</p></div><p style="font-size: small; align-self: center; margin-bottom: 0; padding-bottom: 0">'+ data[i]['date'] +'</p><a style="color: red" href="/delete_announcement?announcement_id=' + data[i]['id'] + '"><p style="font-size: 12px; color=red; margin:0; padding:0; flex:.5">Delete</p></a></div><p style="margin-left:10px">'+ linkify(data[i]['text']) +'</p></div><hr>';
             }
             document.getElementById('announcements_board_div').innerHTML = html;
         });
@@ -23,7 +23,7 @@
         var html = '';
         
         for (var i=0;i<data[5];i++){
-        html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://mineskin.eu/avatar/'+data[1][i]+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[0][i] +'</p></div><p style="font-size: small; align-self: center;">'+ data[2][i] +'</p></div><p style="margin-left:10px">'+ linkify(data[3][i]) +'</p></div><hr>';
+        html = html + '<div style="display:flex"><div style="display:flex; flex-direction: column;"> <div style="display:flex; margin-bottom: -12px;"><img src="https://mineskin.eu/avatar/'+data[i]['uuid']+'" style="height: 24px; width: 24px; margin-right: 4px"></img><p>'+ data[i]['username'] +'</p></div><p style="font-size: small; align-self: center;">'+ data[i]['date'] +'</p></div><p style="margin-left:10px">'+ linkify(data[i]['text']) +'</p></div><hr>';
         }
         document.getElementById('announcements_board_div').innerHTML = html;
     });
@@ -44,17 +44,17 @@
         console.log(data)
 
         var row;
-        for (var i=0; i<data['ids'].length; i++){
-            row = document.getElementById(data['ids'][i]);
+        for (var i=0; i<data['gameservers'].length; i++){
+            row = document.getElementById(data['gameservers'][i]['id']);
             try{
-                if (data['status'][i]==0){
+                if (data['gameservers'][i]['port_status']==0){
                     row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-success">Online</span>'
-                    row.querySelector('#ip_players').innerHTML = data['players'][i];
-                    row.querySelector('#ip_version').innerHTML = data['mc_ver'][i];
+                    row.querySelector('#ip_players').innerHTML = data['gameservers'][i]['players'];
+                    row.querySelector('#ip_version').innerHTML = data['gameservers'][i]['mc_ver'];
                 }
                 else{
-                    if (data['is_local'][i]){
-                        row.querySelector('#server_status').innerHTML = '<form action="/request_turnon?server_port=' + row.querySelector('#server_port').innerHTML +'" method="POST"><span id="port" class="badge badge-danger"><input type="submit" value="'+row.querySelector('#server_ip').innerHTML+'" style="height:60%;font-size:8px"></input>Offline</span></form>'
+                    if (data['gameservers'][i]['is_local']){
+                        row.querySelector('#server_status').innerHTML = '<form action="/request_turnon" method="POST"><input hidden name="correlation_id" value=' + data['gameservers'][i]['id'] +'><span id="port" class="badge badge-danger"><input type="submit" style="height:60%;font-size:8px">&#9166;</input>Offline</span></form>'
                     }
                     else{
                         row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-danger">Offline</span>'
@@ -63,9 +63,16 @@
                 }
             }
             catch(e){
-                console.warn('Unable to update server with id ' + data['ids'][i]);
+                console.warn('Unable to update server with id ' + data['gameservers'][i]['id']);
                 continue
             }
+
+            if (data['gameservers'][i]['info']){
+                document.getElementById(data['gameservers'][i]['id'] + '--info_content_div').innerHTML = data['gameservers'][i]['info'];
+                document.getElementById(data['gameservers'][i]['id'] + '--info_button').disabled = false;
+                document.getElementById(data['gameservers'][i]['id'] + '--info_button').style.color = 'blue';
+            }
+            
         }
 
         document.getElementById('nav_date').innerHTML = 'Last update: ' + data['date_now']
@@ -74,8 +81,23 @@
     function refreshPorts(){
         document.getElementById('refresh_ports').disabled = true;
         document.getElementById('refresh_ports_icon').className = 'fa fa-spinner fa-spin';
-        socket.emit('ask port status', {});
+
+        var table = document.getElementById('gameserver_table').getElementsByTagName('tr');
+        port_ids = [];
+
+        for (var i=0; i<table.length; i++){
+            if (table[i]['id']){
+                port_ids.push(table[i]['id'])
+            }
+        }
+
+        socket.emit('ask port status', {'port_ids': port_ids});
     }
+
+    function toggleGameserverInfo(port_id){
+        document.getElementById(port_id + '--info_content_div').hidden = !document.getElementById(port_id + '--info_content_div').hidden;
+    }
+
 
 </script>
 {% endblock %}
@@ -139,7 +161,7 @@
             <h4 style="padding-top: 10px">Available IPs</h4>
             <button type="button" class="btn btn-light" id="refresh_ports" onclick="refreshPorts()" disabled><i class="fa fa-spinner fa-spin" id="refresh_ports_icon" style="align-self: center"></i></button>
         </div>
-        <table class="table"> 
+        <table class="table" id="gameserver_table"> 
             <thread style="padding-bottom: 10px">
                 <tr>
                     <th scope="col">#</th>
@@ -149,24 +171,31 @@
                     <th scope="col">Server Name</th>
                     <th scope="col">Version</th>
                     <th scope="col">Online Players</th>
+                    <th scope="col">Info</th>
                 </tr>
             </thread>
         
-            {%for i in range(0, ports_len)%}
+            {%for gs in gameservers%}
                 
-                <tr id="{{ids[i]}}">
-                    <th scope="row">{{i+1}}</th>
-                    <td id="server_ip">{{ips[i]}} </td>
-                    <td id="server_port">{{local_ports[i]}}</td>
+                <tr id="{{gs['id']}}">
+                    <th scope="row">{{gs['order_id']}}</th>
+                    <td id="server_ip">{{gs['ip']}} </td>
+                    <td id="server_port">{{gs['local_port']}}</td>
                     <td id="server_status">
-                    {% if ports_status[i]==0 %}
+                    {% if gs['port_status']==0 %}
                         <span id="port" class="badge badge-success">Online</span>
                     {% else %}
                         <span id="action"><span id="port" class="badge badge-danger">Offline</span></span>
                     {% endif %}
-                    <td id="ip_name">{{descs[i]}}</td>
+                    </td>
+                    <td id="ip_name">{{gs['desc']}}</td>
                     <td id="ip_version"></td>
                     <td id="ip_players">-</td>
+                    <td id="info_content" style="display:flex; flex-direction: row;">
+                        <button style="border: 0; background-color: transparent;" id="{{gs['id']+'--info_button'}}" onclick="toggleGameserverInfo('{{gs['id']}}')" disabled><i class="fa fa-info-circle"></i></button>
+                        <div id="{{gs['id']+'--info_content_div'}}" style="display:flex; flex-direction: row;" hidden>
+                            <p style="position:absolute; border-radius: 1px;" id="{{gs['id']+'--info_content_p'}}"></p>
+                        </div>
                     </td>
                  </tr>
             {%endfor%}
@@ -188,12 +217,12 @@
                     <th scope="col">Last Online</th>
                 </tr>
             </thread>
-            {%for i in range(0, userdata_len)%}
-                {% if usernames[i] %}
+            {%for user in user_data%}
+                {% if user['username'] %}
                 <tr>
-                    <th scope="row">{{i+1}}</th>
-                    <td style="display: flex; flex-direction: row; justify-content: flex-start;"><img style="width: 16px; height: 16px; align-self: center; margin-right: 4px;" src="https://mineskin.eu/avatar/{{uuids[i]}}"></a>{{usernames[i]}}</td>
-                    <td>{{userdates[i]}}</td>
+                    <th scope="row">{{user['order_id']}}</th>
+                    <td style="display: flex; flex-direction: row; justify-content: flex-start;"><img style="width: 16px; height: 16px; align-self: center; margin-right: 4px;" src="https://mineskin.eu/avatar/{{user['uuid']}}"></a>{{user['username']}}</td>
+                    <td>{{user['last_login']}}</td>
                 </tr>
                 {% endif %}
             {%endfor%}

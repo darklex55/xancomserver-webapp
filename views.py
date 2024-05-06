@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, render_template, request, session, redirect, url_for, make_response
-from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, getSSHPortFormated, produceHashFromText, getServers, attempt_wol, attempt_shutdown, getServerStatus, getJavaServers, toggleGameServerSchedule, generateNewSSHKeyRebel
+from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, produceHashFromText, getUpdateServers, attempt_wol, attempt_shutdown, getServerStatus, getJavaServers, toggleGameServerSchedule, generateNewSSHKeyRebel
 from .email_utils import sendPrivateKey
 from flask_login import login_required, current_user, logout_user
 from .models import User, Announcements, Server, Game_server
@@ -16,15 +16,12 @@ def home():
     if current_user.uuid == '8667ba71b85a4004af54457a9734eed7':
         flash('Buy minecraft you filthy pirate.', category='error')
     updateInteractivity(current_user)
-    ips, local_ports, descs, ports_status, dirs, ports_len, ids, is_local = getAvailablePortsFormated()
-    usernames, uuids, userdates, __, __, userdata_len = getAllUserData()
-    return render_template("home.html", dt = getCurrentDatetimeFormated(), ips=ips, local_ports = local_ports, descs=descs, ports_status = ports_status, ports_len = ports_len, usernames = usernames, userdates = userdates, uuids=uuids, userdata_len = userdata_len, ids=ids, is_local=is_local), 200
+    return render_template("home.html", dt = getCurrentDatetimeFormated(), gameservers = getAvailablePortsFormated(), user_data=getAllUserData()), 200
 
 @views.route('/settings', methods=['GET', 'POST'])
 @login_required
 def settings():
     updateInteractivity(current_user)
-    ssh_ip = getSSHPortFormated()
     session.clear()
     session['mfa_type'] = 'M'
 
@@ -62,8 +59,13 @@ def settings():
         22: "Could not reset key - unexpected error."}
         flash(messages.get(int(request.args['msg'])), category=request.args['category'])
 
+    servers = None
 
-    return render_template("settings.html", dt = getCurrentDatetimeFormated(), ssh_ip = ssh_ip, servers = getServers(), mfa_type=session['mfa_type'])
+    if current_user.is_privilleged:
+        servers = getUpdateServers()
+
+
+    return render_template("settings.html", dt = getCurrentDatetimeFormated(), servers = servers, mfa_type=session['mfa_type'])
 
 @views.route('/user_management', methods=['GET', 'POST'])
 @login_required
@@ -82,8 +84,7 @@ def user_management():
                     return redirect(url_for('auth.login'))
 
 
-        username, __, logins, email, validated, length = getAllUserData()
-        return render_template("user_management.html", dt = getCurrentDatetimeFormated(), user_obj=[username, email, validated, logins, length])
+        return render_template("user_management.html", dt = getCurrentDatetimeFormated(), user_data=getAllUserData())
 
     return redirect(url_for('views.home'))
 
@@ -186,8 +187,16 @@ def manage():
 
                     flash(messages[int(request.args['msg'])], category=request.args['category'])
 
-                ips, ports, descs, statuses, dirs, lens, ids, is_local, schedules = getJavaServers(request.args['ip'])
-                return render_template("manage.html", dt = getCurrentDatetimeFormated(), ips = ips, ports = ports, descs = descs, statuses=statuses, dirs=dirs, lens=lens, schedules=schedules, ids=ids, managed=any(is_local))
+                if request.method=='POST':
+                    if request.form.get('info_update') and request.form.get('cor_id'):
+                        gs = Game_server.query.filter_by(correlation_id=request.form.get('cor_id')).first()
+                        if (gs):
+                            gs.info_content = request.form.get('info_content')
+                            db.session.commit()
+                            flash('Info updated successfuly')
+
+                servers = getJavaServers(request.args['ip'])
+                return render_template("manage.html", dt = getCurrentDatetimeFormated(), servers = servers, managed=any([s['is_local'] for s in servers]))
             else:
                 return redirect(url_for('views.settings') + '?msg=6&category=error')
         else:
@@ -199,32 +208,26 @@ def manage():
 @login_required
 def request_turnon():
     updateInteractivity(current_user)
-    if 'server_port' in request.args and 'server_ip' in request.args:
-        server = Server.query.filter_by(public_ip = request.args['server_ip']).first()
-        if server:
-            try:
-                res = requests.get('http://' + server.ip + '/getMCServers', timeout=2)
-                if res.status_code==200:
-                    res = res.json()
-                    ports = res.get('answer')[1]
-                    if request.args['server_port'] in ports:
-                        try:
-                            requests.get('http://'+ server.ip +'/run_mc_server?name='+res.get('answer')[2][ports.index(request.args['server_port'])], timeout=1)
-                            flash('Server Start Request Submitted', 'success')
-                            return redirect(url_for('views.home'))
-                        except:
-                            return redirect(url_for('views.home'))
-                    else:
-                        return redirect(url_for('views.home'))
-                else:
-                    return redirect(url_for('views.home'))
-
-            except:
-                return redirect(url_for('views.home'))
-        else:
-            return redirect(url_for('views.home'))
-    else:
-        return redirect(url_for('views.home'))
+    if 'correlation_id' in request.form:
+        game_server = Game_server.query.filter_by(correlation_id = request.form['correlation_id']).first()
+        if game_server:
+            server = Server.query.filter_by(id=game_server.server_id).first()
+            if server:
+                try:
+                    updated_gameservers = getAvailablePortsFormated(server.ip)
+                    for gs in updated_gameservers:
+                        if gs['id'] == game_server.correlation_id:
+                            try:
+                                requests.get('http://'+ server.ip +'/run_mc_server?name='+game_server.dir, timeout=1)
+                                flash('Server Start Request Submitted', 'success')
+                            except:
+                                print('Local server communication error')
+                            
+                            break
+                except:
+                    print('Local server communication error')
+    
+    return redirect(url_for('views.home'))
 
 @views.route('/manage/toggle_schedule', methods=['POST'])
 @login_required
@@ -305,7 +308,7 @@ def add_unmanaged_gameserver():
             server = Server.query.filter_by(ip = request.form['server_ip']).first()
             if server:
                 if not Game_server.query.filter_by(server_id = server.id).filter_by(port = request.form['server_port']).first():
-                    new_game_server = Game_server(server_id = server.id, port = request.form['server_port'], updated_at = None, include_schedule=False, status = None)
+                    new_game_server = Game_server(server_id = server.id, port = request.form['server_port'], updated_at = None, include_schedule=False, status = None, correlation_id = server.ip + '_' + request.form['server_port'])
                     db.session.add(new_game_server)
                     db.session.commit()
                     return redirect(request.referrer.split('&')[0] + '&msg=11&category=success')

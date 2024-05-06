@@ -16,27 +16,30 @@
         console.log(data)
         
         var row;
-        for (var i=0; i<data['ids'].length; i++){
-            row = document.getElementById(data['ids'][i]);
+        for (var i=0; i<data['gameservers'].length; i++){
+            row = document.getElementById(data['gameservers'][i]['id']);
             try{
-                if (data['status'][i]==0){
+                if (data['gameservers'][i]['port_status']==0){
                     row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-success">Online</span>'
-                    if (data['is_local'][i]){
+                    if (data['gameservers'][i]['is_local']){
                         row.querySelector('#action').innerHTML = '<form action="/manage/shutoff?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_off_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to stop the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Stop</span></button></form>'
                     }
                 }
                 else{
                     row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-danger">Offline</span>'
-                    if (data['is_local'][i]){
+                    if (data['gameservers'][i]['is_local']){
                         row.querySelector('#action').innerHTML = '<form action="/manage/turnon?name='+ row.querySelector('#ip_name').innerHTML +'&server_ip=' + manage_server_ip +'" method="POST"><button type="submit" class="close" id="turn_on_server" name="ip" onSubmit="return confirm(\'Are you sure you wish to start the server?\');"><span aria-hidden="true" style="font-size: 12px;margin: auto;">Start</span></button></form>'
                     }
                 }
-                if(!data['is_local'][i]){
-                    row.querySelector('#action').innerHTML = '<form action="/manage/remove_unmanaged_gameserver" method="POST"><button type="submit" class="close" id="refresh_ports" name="gameserver_ip" value="'+manage_server_ip+':'+row.querySelector('#server_port').innerHTML+'"><span aria-hidden="true" style="font-size: 12px;margin: auto; color: brown">Delete</span></button></form>'
+                if(!data['gameservers'][i]['is_local']){
+                    row.querySelector('#action').innerHTML = '<form action="/manage/remove_unmanaged_gameserver" method="POST"><button type="submit" class="close" id="refresh_ports" name="gameserver_ip" value="'+manage_server_ip+':'+row.querySelector('#server_port').innerHTML+'"><span aria-hidden="true" style="font-size: 12px;margin: auto; color: brown">Delete</span></button></form><button class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px; margin-left:8px" onClick="openInfoEditPopup(\''+data['gameservers'][i]['id']+'\')">Edit info</button>'
+                }
+                else{
+                    row.querySelector('#action').innerHTML = '<button class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px; margin-left:8px" onClick="openInfoEditPopup(\''+data['gameservers'][i]['id']+'\')">Edit info</button>';
                 }
             }
             catch(e){
-                console.warn('Unable to update server with id ' + data['ids'][i]);
+                console.warn('Unable to update server with id ' + data['gameservers'][i]['id']);
                 continue
             }
         }
@@ -57,6 +60,15 @@
 
     function close_new_open(){
         document.getElementById('add_server_section').innerHTML='<button type="button" class="btn btn-light" id="add_new_button" onclick="add_new_open()" style="align-self: center;">Add unmanaged server <i class="fa fa-plus-square"></i></button>'
+    }
+
+    function openInfoEditPopup(port_id){
+        console.log('test: ' + port_id)
+        document.getElementById(port_id+'--info').hidden=false
+    }
+
+    function closeInfoEditPopup(port_id){
+        document.getElementById(port_id+'--info').hidden=true
     }
 
 </script>
@@ -115,6 +127,7 @@
     {% endif %} 
     {% endwith %}
 
+
 <div class="body-main">
     <div class="body-main-list" style="min-width: 20%;">
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
@@ -133,30 +146,39 @@
                 </tr>
             </thread>
 
-            {%for i in range(0, lens)%}
+            {%for i in range(servers |length)%}
                 
-            <tr id="{{ids[i]}}">
+            <tr id="{{servers[i]['id']}}">
                 <th scope="row">{{i+1}}</th>
-                <td id="server_port">{{ports[i]}}</td>
+                <td id="server_port">{{servers[i]['local_port']}}</td>
                 <td id="server_status">
-                {% if statuses[i]==0 %}
+                {% if servers[i]['port_status']==0 %}
                     <span id="port" class="badge badge-success">Online</span>
                 {% else %}
                     <span id="port" class="badge badge-danger">Offline</span>
                 {% endif %}
-                <td id="ip_name">{{dirs[i]}}</td>
+                </td>
+                <td id="ip_name">{{servers[i]['dir']}}</td>
                 <td style="text-align: center;">
-                    {% if schedules[i]==-1 or not managed %}
+                    {% if servers[i]['schedule']==-1 or not managed %}
                     <button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px" disabled>On</button>
                     {% endif %}
-                    {% if schedules[i]==0 and managed %}
+                    {% if servers[i]['schedule']==0 and managed %}
                     <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-secondary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">Off</button></form>
                     {% endif %}
-                    {% if schedules[i]==1 and managed %}
+                    {% if servers[i]['schedule']==1 and managed %}
                     <form id="schedule_action_{{ids[i]}}" action="/manage/toggle_schedule?ip={{ips[i]}}&port={{ports[i]}}" method="POST"><button type="submit" class="btn btn-primary btn-sm" style="font-size: 10px; padding-top:2px; padding-bottom:2px">On</button></form>
                     {% endif %}
                 </td>
-                <td id="action"></td>
+                <td id="action" style="display: flex; flex-direction: row;"></td>
+                <td id="{{servers[i]['id'] + '--info'}}" style="display: flex; flex-direction: row;" hidden>
+                    <form id="{{servers[i]['id'] + '--info'}}" style="position:relative" method="POST">
+                        <input type="text" name="info_content" id="info_content" value="{{servers[i]['info']}}"></input>
+                        <input type="text" name="info_update" id="info_update" value="info-update" hidden></input>
+                        <input type="text" name="cor_id" id="cor_id" value="{{servers[i]['id']}}" hidden></input>
+                        <button type="submit">Update</button>
+                    </form>
+                    <button onclick=closeInfoEditPopup('{{servers[i]['id']}}')>X</button>
                 </td>
              </tr>
              
