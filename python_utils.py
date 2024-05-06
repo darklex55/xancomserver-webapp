@@ -63,12 +63,13 @@ def getUpdatePortStatusSocket(port_ids = None):
     gameservers_obj = []
 
     all_gameservers_obj = getAvailablePortsFormated(None, True)
+    print(all_gameservers_obj)
 
     if not port_ids:
         return all_gameservers_obj
 
     for gs in all_gameservers_obj:
-        if gs.id in port_ids:
+        if gs['id'] in port_ids:
             gameservers_obj.append(gs)
 
     updateInteractivity(current_user)
