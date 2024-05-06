@@ -208,6 +208,7 @@ def manage():
 @login_required
 def request_turnon():
     updateInteractivity(current_user)
+    print(request.form.get('correlation_id'))
     if request.form.get('correlation_id'):
         game_server = Game_server.query.filter_by(correlation_id = request.form.get('correlation_id')).first()
         if game_server:
