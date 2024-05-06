@@ -218,7 +218,7 @@ def request_turnon():
                     for gs in updated_gameservers:
                         if gs['id'] == game_server.correlation_id:
                             try:
-                                requests.get('http://'+ server.ip +'/run_mc_server?name='+gs.dir, timeout=1)
+                                requests.get('http://'+ server.ip +'/run_mc_server?name='+gs['dir'], timeout=1)
                                 flash('Server Start Request Submitted', 'success')
                             except:
                                 print('Local server communication error')
