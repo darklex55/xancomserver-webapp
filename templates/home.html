@@ -54,7 +54,7 @@
                 }
                 else{
                     if (data['gameservers'][i]['is_local']){
-                        row.querySelector('#server_status').innerHTML = '<form action="/request_turnon" method="POST"><input hidden name="correlation_id" value=' + data['gameservers'][i]['id'] +'><span id="port" class="badge badge-danger"><input type="submit" style="height:60%;font-size:8px">&#9166;</input>Offline</span></form>'
+                        row.querySelector('#server_status').innerHTML = '<form action="/request_turnon" method="POST"><input hidden name="correlation_id" id="correlation_id" value=' + data['gameservers'][i]['id'] +'><span id="port" class="badge badge-danger"><input type="submit" style="height:60%;font-size:8px">&#9166;</input>Offline</span></form>'
                     }
                     else{
                         row.querySelector('#server_status').innerHTML = '<span id="port" class="badge badge-danger">Offline</span>'
