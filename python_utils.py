@@ -9,7 +9,7 @@ from pyotp import totp, random_base32
 from base64 import b64encode
 from io import BytesIO
 import qrcode
-
+import json
 
 import requests
 import os
@@ -212,14 +212,47 @@ def updateInteractivity(user):
     user.last_login = datetime.now()
     db.session.commit()
 
+def getUserPreferences(user_id):
+    user_pref = {}
+
+    if not user_id:
+        return user_pref
+    
+    user = User.query.filter_by(id = user_id).first()
+
+    if user:
+        if user.user_preferences:
+            user_pref = json.loads(user.user_preferences)
+
+    return user_pref
+
+def setUserPreference(user_id, preference, value):
+    user_pref = {}
+
+    if not user_id:
+        return user_pref
+    
+    user = User.query.filter_by(id = user_id).first()
+
+    if user:
+        if user.user_preferences:
+            user_pref = json.loads(user.user_preferences)
+
+        if not preference:
+            return user_pref
+
+        user_pref[preference] = value
+
+        user.user_preferences = json.dumps(user_pref, separators=(',', ':'))
+        db.session.commit()
+
+        return user_pref
+
+    return user_pref
+
 def getAllUserData():
     users = User.query.order_by(desc(User.last_login)).all()
     users_obj = []
-    usernames  = []
-    dates = []
-    uuids = []
-    emails = []
-    validated = []
     i=1
 
     for user in users:

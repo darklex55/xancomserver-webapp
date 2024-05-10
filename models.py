@@ -14,6 +14,7 @@ class User(db.Model, UserMixin):
     is_privilleged = db.Column(db.Boolean, default=False)
     created_on = db.Column(db.DateTime(timezone=True))
     mfa_type = db.Column(db.String(8), default='M')
+    user_preferences = db.Column(db.String(200), default='{}')
 
 class Announcements(db.Model):
     id = db.Column(db.Integer, primary_key=True)

@@ -1,5 +1,5 @@
 from flask import Blueprint, flash, render_template, request, session, redirect, url_for, make_response
-from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, produceHashFromText, getUpdateServers, attempt_wol, attempt_shutdown, getServerStatus, getJavaServers, toggleGameServerSchedule, generateNewSSHKeyRebel
+from .python_utils import getCurrentDatetimeFormated, getAvailablePortsFormated, getAllUserData, updateInteractivity, produceHashFromText, getUpdateServers, attempt_wol, attempt_shutdown, getServerStatus, getJavaServers, toggleGameServerSchedule, generateNewSSHKeyRebel, getUserPreferences, setUserPreference
 from .email_utils import sendPrivateKey
 from flask_login import login_required, current_user, logout_user
 from .models import User, Announcements, Server, Game_server
@@ -87,6 +87,22 @@ def user_management():
         return render_template("user_management.html", dt = getCurrentDatetimeFormated(), user_data=getAllUserData())
 
     return redirect(url_for('views.home'))
+
+@views.route('/dark_mode_toggle', methods=['POST'])
+@login_required
+def toggle_dark_mode():
+    if request.get_json().get('user_id'):
+        preferences = getUserPreferences(request.get_json().get('user_id'))
+    
+        if preferences.get('dark_mode', False):
+            setUserPreference(request.get_json().get('user_id'), 'dark_mode', not preferences['dark_mode'])
+        else:
+            setUserPreference(request.get_json().get('user_id'), 'dark_mode', True)
+
+        return "User preference changed", 200
+    
+    else:
+        return "User id not valid", 400
 
 @views.route('/settings/turn_on', methods=['POST'])
 @login_required
