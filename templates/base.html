@@ -50,14 +50,69 @@
               }
             }
 
+            function toggleDarkMode(){
+              const xhttp = new XMLHttpRequest();
+              xhttp.open("POST", '/dark_mode_toggle', true);
+              xhttp.setRequestHeader('Content-type', 'application/json; charset=UTF-8');
+              xhttp.send(JSON.stringify({"user_id": "{{current_user.id}}"}));
+              xhttp.onload = function(){
+                dark_mode = !dark_mode;
+
+                if (dark_mode) document.getElementById('toggle_dark_mode_icon').className = 'fa fa-sun-o';
+                else document.getElementById('toggle_dark_mode_icon').className = 'fa fa-moon-o';
+
+                setToggleDarkMode(dark_mode);
+              }
+            }
+
+            function setToggleDarkMode(set_dark){
+              const class_map = {'header': 'header-dark', 'body-main': 'body-main-dark', 'body-main-list':'body-main-list-dark', 'body-main-list-overflow': 'body-main-list-overflow-dark', 
+              'body-main-announcement' : 'body-main-announcement-dark', 'announcement-entries': 'announcement-entries-dark', 'table-xancom': 'table-xancom-dark', 'announcement-text-input': 'announcement-text-input-dark',
+              'btn-light': 'btn-light-dark', 'refresh-btn': 'refresh-btn-dark'}
+
+              let objects = Object.keys(class_map);
+
+              if (set_dark){
+                for (let i=0; i<objects.length; i++){
+                  let elements = document.getElementsByClassName(objects[i]);
+                  for (let j=0; j<elements.length; j++){
+                    elements[j].classList.add(class_map[objects[i]]);
+                  }
+                }
+                document.body.style.backgroundColor = "rgb(36, 36, 36)";
+              }
+              else{
+                for (let i=0; i<objects.length; i++){
+                  let elements = document.getElementsByClassName(class_map[objects[i]]);
+                  for (let j=0; j<elements.length; j++){
+                    elements[j].classList.remove(class_map[objects[i]]);
+                  }
+                }
+                document.body.style.backgroundColor = "white";
+              }
+            }
+
+            var dark_mode = '{{current_user.user_preferences}}'.replaceAll('&#34;', '"');
+
+            if (dark_mode == 'None'){
+              dark_mode = false
+            }
+            else if (dark_mode){
+              dark_mode = JSON.parse(dark_mode)
+              if (dark_mode['dark_mode']){
+                setToggleDarkMode(true);
+                dark_mode = true;
+              }
+              else{
+                dark_mode = false
+              }
+            }
+
         </script>
 
         {% block sockets %}{% endblock %}
 
         <style>
-
-
-
             .header {
                 background-color: green;
                 color: white;
@@ -78,6 +133,12 @@
                 justify-content: space-around; 
             
             }
+
+            .body-main-dark {
+                
+                background-color: rgb(36, 36, 36);
+            
+            }
             
             .body-main-list {
                 border-radius: 10px;
@@ -92,6 +153,11 @@
                 font-family: 'Montserrat', sans-serif;
                 font-weight: 500;
                 
+            }
+
+            .body-main-list-dark {
+              background: rgb(55, 55, 55);
+              color: white
             }
 
             .body-main-list-overflow {
@@ -111,6 +177,11 @@
 
                 scroll-padding: auto;
                 
+            }
+
+            .body-main-list-overflow-dark {
+              background: rgb(55, 55, 55);
+              color: white
             }
 
             .body-main-list-overflow:hover {
@@ -145,6 +216,58 @@
                 font-weight: 500;
                 
             }
+
+            .body-main-announcement-dark {
+              background: rgb(55, 55, 55);
+              color: white
+            }
+
+            .btn.btn-light.dark-mode-button:hover {
+              transform: scale(1.2);
+              transition: 0.2s;
+            }
+
+            .table-xancom {
+              color: black;
+            }
+
+            .table-xancom-dark {
+              color: white
+            }
+
+            .announcement-entries {
+              width: 100%; 
+              height:100%; 
+              min-height:200px; 
+              margin: 10px; 
+              padding:10px; 
+              background-color: white; 
+              border-radius: 10px;
+            }
+
+            .announcement-entries-dark {
+              background-color: rgb(55, 55, 55);
+              color: white;
+            }
+
+            .announcement-text-input {
+              background-color: white;
+              color: black;
+            }
+
+            .announcement-text-input-dark {
+              background-color: rgb(55, 55, 55);
+              color: white;
+            }
+
+            .announcement-text-input-dark::-moz-selection {
+              background-color: rgb(55, 55, 55);
+              color: white;
+            }            
+
+            .refresh-btn-dark{
+              background-color: rgb(55, 55, 55);
+            }
             
             </style>
 
@@ -154,6 +277,37 @@
 
     </head>
     <body>
+
+      <nav class="header"> 
+
+        <div style="display: flex; flex-direction: row; align-content: center">
+        
+            <a href="/" style="margin-left: 50px; align-self: center">
+                
+                <img src="https://mineskin.eu/avatar/{{current_user.uuid}}" style="height: 42px; width: 42px" {% if not current_user.is_authenticated %} hidden {% endif %}></img>
+                
+            </a>
+        
+            <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
+                <div class="navbar-nav">
+                    {% if current_user.is_authenticated %}
+                    <a class="nav-item nav-link" id="logout" href="/settings" style="color:white">Settings</a>
+                    <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
+                    {% else %}
+                    <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
+                    <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        
+        </div>
+        
+        <div style="display: flex; flex-direction: row;" {% if not current_user.is_authenticated %} hidden {% endif %}>
+          <button class="btn btn-light dark-mode-button" style="background: transparent; border:0" onclick="toggleDarkMode()"><i id="toggle_dark_mode_icon" style="color: white; margin:auto;"></i></button>
+          <p id = "nav_date" style="margin-right: 50px; align-self: center; text-align: right; margin-top: auto; margin-bottom: auto;">Last update: {{dt}}</p>
+        </div>
+        
+        </nav>
 
     {% block body %}{% endblock %}
 
@@ -179,6 +333,16 @@
       type="text/javascript"
       src="{{ url_for('static', filename='index.js') }}"
     ></script>
+
+    <script>
+      if (dark_mode){
+        document.getElementById('toggle_dark_mode_icon').className = 'fa fa-sun-o';
+        setToggleDarkMode(true);
+      }
+      else{
+        document.getElementById('toggle_dark_mode_icon').className = 'fa fa-moon-o';
+      }
+    </script>
 
     </body>
 

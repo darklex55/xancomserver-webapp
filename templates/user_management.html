@@ -8,34 +8,6 @@
 {% block body %}
 
 
-<nav class="header"> 
-
-<div style="display: flex; flex-direction: row; align-content: center">
-
-    <a href="/" style="margin-left: 50px; align-self: center">
-        
-        <img src="https://mineskin.eu/avatar/{{current_user.uuid}}" style="height: 42px; width: 42px"></img>
-        
-    </a>
-
-    <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
-        <div class="navbar-nav">
-            {% if current_user.is_authenticated %}
-            <a class="nav-item nav-link" id="logout" href="/settings" style="color:white">Settings</a>
-            <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
-            {% else %}
-            <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
-            <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
-            {% endif %}
-        </div>
-    </div>
-
-</div>
-
-<p id = "nav_date" style="margin-right: 50px; align-self: center; text-align: center; margin-top: auto; margin-bottom: auto;">Last update: {{dt}}</p>
-
-</nav>
-
 {% with messages = get_flashed_messages(with_categories=true) %} 
         {% if messages %} 
             {% for category, message in messages %} 
@@ -63,7 +35,7 @@
         <div style="display: flex; flex-direction:row; justify-content:space-between;">
             <h4 style="padding-top: 10px">Registered Users</h4>
         </div>
-        <table class="table"> 
+        <table class="table table-xancom"> 
             <thread style="padding-bottom: 10px">
                 <tr>
                     <th scope="col">#</th>
@@ -86,14 +58,14 @@
                 <tr>
                     <th scope="row">{{user['order_id']}}</th>
                     <td>{{user['username']}} </td>
-                    <td>{{user['uuid']}}</td>
+                    <td>{{user['email']}}</td>
                     <td style="text-align: center;">
                     {% if user['last_login']==1 %}
                         <span class="badge badge-success">Yes</span>
                     {% else %}
                         <span class="badge badge-danger">No</span>
                     {% endif %}
-                    <td>{{user['email']}}</td>
+                    <td>{{user['last_login']}}</td>
                     <td style="text-align: center;">
                         <form method="POST" style="padding: 2%; max-width: 60%; max-height: 60%; align-items: center; text-align: center;" class="body-main-list">
                             <input type="hidden" id="email_{{user['order_id']}}" name="email" value="{{user['uuid']}}"></input>

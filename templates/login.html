@@ -2,33 +2,6 @@
 {% block title %}Login{% endblock %} 
 {% block body %}
 
-    <nav class="header"> 
-
-        <div style="display: flex; flex-direction: row; align-content: center">
-        
-            <a href="" style="margin-left: 50px; align-self: center">
-                
-                
-                
-            </a>
-        
-            <div class="navbar navbar-expand-lg navbar-dark" id="navbar">
-                <div class="navbar-nav">
-                    {% if current_user.is_authenticated %}
-                    <a class="nav-item nav-link" id="logout" href="/logout" style="color:white">Logout</a>
-                    {% else %}
-                    <a class="nav-item nav-link" id="login" href="/login" style="color:white">Login</a>
-                    <a class="nav-item nav-link" id="signUp" href="/sign-up" style="color:white">Sign Up</a>
-                    {% endif %}
-                </div>
-            </div>
-        
-        </div>
-        
-        <p style="margin-right: 50px; align-self: center; text-align: center; margin-top: auto; margin-bottom: auto;">{{dt}}</p>
-        
-    </nav>
-
     {% with messages = get_flashed_messages(with_categories=true) %} 
         {% if messages %} 
             {% for category, message in messages %} 
@@ -104,8 +77,10 @@
             id="otp_code"
             name="otp_code"
             pattern="[0-9]{6}"
+            oninput="otpFormatControl(this)"
             autocomplete="off"
             required
+            style = 'width: 6em; max-width: 6em; font-size: large;'
             />
             {% else %}
             <input
@@ -117,6 +92,38 @@
             />
             {% endif %}
         </div>
+
+        <script>
+            document.getElementById('otp_code').select();
+
+            var last_otp_val = '';
+            const otpregex = /^\d{1,6}$/;
+
+            function otpFormatControl(f){
+                if (f.value == ''){
+                    f.old = '';
+                    return f.old;
+                }
+
+                if (!otpregex.test(f.value.toString())){
+                    f.value = f.old ? f.old : '';
+                    return f.old ? f.old : ''
+                }
+
+                if (f.value.length!=6){
+                    document.getElementById('otp_code').style.borderColor = "red";
+                }
+                else{
+                    document.getElementById('otp_code').style.borderColor = "black";
+                }
+                
+                f.old = f.recent ? f.recent : ''
+                f.recent= f.value ? f.value : ''
+                return f.value
+            }
+        
+        </script>
+
         <br />
         <button type="submit" class="btn btn-primary">Verify</button>
         </form>
